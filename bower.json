@@ -1,0 +1,25 @@
+{
+  "name": "urth-viz-vega",
+  "version": "0.0.1",
+  "description": "Represents a widget that renders a visualization using vega-lite",
+  "main": "urth-viz-vega.html",
+  "keywords": [
+    "urth",
+    "visualization",
+    "web-components"
+  ],
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.2.4",
+    "iron-resizable-behavior": "PolymerElements/iron-resizable-behavior#^1.0.0",
+    "vega-embed": "latest",
+    "requirejs": "^2.1.0"
+  },
+  "private": true
+}
