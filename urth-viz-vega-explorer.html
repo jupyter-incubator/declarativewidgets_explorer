@@ -1,0 +1,117 @@
+<!--
+# Copyright (c) Jupyter Development Team.
+# Distributed under the terms of the Modified BSD License.
+-->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-selector/iron-selector.html">
+<link rel="import" href="../urth-core-dataframe/urth-core-dataframe.html">
+<link rel="import" href="urth-viz-vega.html" is="urth-core-import" package="ibm-et/urth-viz-vega">
+<link rel="import" href="../urth-viz-table/urth-viz-table.html">
+
+<!--
+Represents a widget that lets the user choose between a set of visualizations for a given dataframe.
+
+Example:
+
+    <urth-viz-vega-explorer ref="aDataFrame"></urth-viz-vega-explorer>
+
+@group Urth Viz
+@element urth-viz-vega-explorer
+-->
+<dom-module id="urth-viz-vega-explorer">
+    <link rel="import" type="css" href="../fontawesome/css/font-awesome.min.css">
+    <template>
+        <style>
+          .iron-selected { background-color: yellow; }
+        </style>
+        <iron-selector attr-for-selected="name" selected="{{type}}">
+            <span title="Table" name="table" class="fa fa-table fa-2x"></span>
+            <span title="Bar Chart" name="bar" class="fa fa-bar-chart fa-2x"></span>
+            <span title="Area Chart" name="area" class="fa fa-area-chart fa-2x"></span>
+            <span title="Line Chart" name="line" class="fa fa-line-chart fa-2x"></span>
+            <span title="Scatter Chart" name="point" class="fa fa-bullseye fa-2x"></span>
+<!--            <span title="Pie Chart" name="pie" class="fa fa-pie-chart fa-2x"></span>-->
+        </iron-selector>
+<!--        <template is="dom-if" if="{{ref}}"> -->
+            <urth-core-dataframe id="df" ref$="{{ref}}" value="{{df}}" rows="{{rows}}" row-as-object="{{!showAsTable}}" auto></urth-core-dataframe>
+<!--        </template> -->
+        <template is="dom-if" if="{{!showAsTable}}">
+            <urth-viz-vega id="vega" mode="vega-lite" spec="{{spec}}"></urth-viz-chart>
+        </template>
+        <template is="dom-if" if="{{showAsTable}}">
+            <urth-viz-table datarows="{{df.data}}" columns="{{df.columns}}"></urth-viz-table>
+        </template>
+        <content></content>
+    </template>
+</dom-module>
+<script>
+
+    'use strict';
+
+    Polymer({
+        is: 'urth-viz-vega-explorer',
+
+        properties: {
+
+ref: String,
+
+            /**
+             * The `urth-viz-chart` chart type to render.
+             */
+            type: {
+                type: String,
+                value: 'bar',
+                notify: true,
+                observer: '_typeChanged'
+            },
+
+            showAsTable: {
+                type: Boolean,
+                computed: '_showAsTable(type)'
+            },
+
+            /**
+             * Allows user to select multiple chart components (bars in barchart, slices in pie chart, etc).
+            multiSelect: {
+                type: Boolean,
+                value: false,
+                reflectToAttribute: true
+            },
+             */
+
+            spec: {
+                type: Object,
+                value: new Object({
+  "description": "A simple bar chart with embedded data.",
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "Letter", "type": "ordinal"},
+    "y": {"field": "Number", "type": "quantitative"}
+  }
+                }),
+            }
+        },
+
+        _typeChanged: function(newType) {
+            if (this.spec && newType != 'table') {
+                this.spec.mark = newType;
+                this.$$('#vega')._specChanged(this.spec);
+            }
+        },
+
+        _showAsTable: function(type) {
+            return type == 'table';
+        },
+
+        ready: function() {
+            // If a child dataframe is given, bind that value to df whenever it changes,
+            // otherwise use the dataframe instance in the local DOM
+            var df = this.querySelector('urth-core-dataframe') || this.$.df;
+            df.addEventListener('rows-changed', function(event) {
+                this.spec.data={ values: event.detail.value };
+                this.$$('#vega')._specChanged(this.spec);
+            }.bind(this))
+        }
+    });
+
+ </script>
