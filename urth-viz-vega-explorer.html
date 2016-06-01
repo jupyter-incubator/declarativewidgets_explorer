@@ -3,10 +3,13 @@
 # Distributed under the terms of the Modified BSD License.
 -->
 <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../urth-core-behaviors/error-display-behavior.html">
+<link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
+<link rel="import" href="../urth-viz-behaviors/urth-viz-selection-behavior.html">
 <link rel="import" href="../iron-selector/iron-selector.html">
 <link rel="import" href="../urth-core-dataframe/urth-core-dataframe.html">
-<link rel="import" href="urth-viz-vega.html" is="urth-core-import" package="ibm-et/urth-viz-vega">
 <link rel="import" href="../urth-viz-table/urth-viz-table.html">
+<link rel="import" href="urth-viz-vega.html" is="urth-core-import">
 
 <!--
 Represents a widget that lets the user choose between a set of visualizations for a given dataframe.
@@ -36,7 +39,7 @@ Example:
             <urth-core-dataframe id="df" ref$="{{ref}}" value="{{df}}" rows="{{rows}}" row-as-object="{{!showAsTable}}" auto></urth-core-dataframe>
 <!--        </template> -->
         <template is="dom-if" if="{{!showAsTable}}">
-            <urth-viz-vega id="vega" mode="vega-lite" spec="{{spec}}"></urth-viz-chart>
+            <urth-viz-vega id="vega" mode="vega-lite" spec="{{spec}}" selection-index="{{selectionIndex}}"></urth-viz-vega>
         </template>
         <template is="dom-if" if="{{showAsTable}}">
             <urth-viz-table datarows="{{df.data}}" columns="{{df.columns}}"></urth-viz-table>
@@ -53,7 +56,7 @@ Example:
 
         properties: {
 
-ref: String,
+            ref: String,
 
             /**
              * The `urth-viz-chart` chart type to render.
@@ -82,21 +85,32 @@ ref: String,
             spec: {
                 type: Object,
                 value: new Object({
-  "description": "A simple bar chart with embedded data.",
-  "mark": "bar",
-  "encoding": {
-    "x": {"field": "Letter", "type": "ordinal"},
-    "y": {"field": "Number", "type": "quantitative"}
-  }
+                    description: "A simple chart with embedded data.",
+                    mark: "bar",
+                    encoding: {
+                        x: {"field": "Letter", "type": "ordinal"},
+                        y: {"field": "Number", "type": "quantitative"}
+                    }
                 }),
             }
         },
 
+        behaviors: [
+            Polymer.IronResizableBehavior,
+            Urth.DisplayErrorBehavior,
+            Urth.VizSelectionBehavior
+        ],
+
         _typeChanged: function(newType) {
             if (this.spec && newType != 'table') {
                 this.spec.mark = newType;
-                this.$$('#vega')._specChanged(this.spec);
+                var vega = this.$$('#vega');
+                vega._specChanged(this.spec);
             }
+        },
+
+        _selectionIndexChanged: function() {
+            //TODO
         },
 
         _showAsTable: function(type) {
@@ -108,8 +122,24 @@ ref: String,
             // otherwise use the dataframe instance in the local DOM
             var df = this.querySelector('urth-core-dataframe') || this.$.df;
             df.addEventListener('rows-changed', function(event) {
-                this.spec.data={ values: event.detail.value };
-                this.$$('#vega')._specChanged(this.spec);
+                var values = event.detail.value;
+
+                // tag each element with an index so we can map back to the row from the chart
+                values.forEach(function(value, i) {
+                    value._index = i;
+                });
+
+                this.spec.data = { values: event.detail.value };
+
+                var vega = this.$$('#vega');
+                vega._specChanged(this.spec);
+
+                vega.addEventListener('selection-info-changed', function(e) {
+                    this._setSelectionInfo(e.detail.value);
+
+                    //TODO: bind selection to this.selectionIndex change instead?
+                    this._setSelection((this.selectionAsObject ? df.rows : df.value.data)[this.selectionIndex]); //TODO: multi 
+                }.bind(this));
             }.bind(this))
         }
     });

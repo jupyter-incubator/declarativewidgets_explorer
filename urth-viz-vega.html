@@ -5,6 +5,7 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../urth-core-behaviors/error-display-behavior.html">
 <link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
+<link rel="import" href="../urth-viz-behaviors/urth-viz-selection-behavior.html">
 
 <script src="../requirejs/require.js"></script>
 
@@ -23,8 +24,7 @@ Example:
 <dom-module id="urth-viz-vega">
     <template>
         <style>
-          :host {
-          }
+          #container .selected { fill: yellow !important; }
         </style>
         <div id="container">
         </div>
@@ -51,11 +51,16 @@ Example:
 
             behaviors: [
                 Polymer.IronResizableBehavior,
-                Urth.DisplayErrorBehavior
+                Urth.DisplayErrorBehavior,
+                Urth.VizSelectionBehavior
             ],
 
             listeners: {
                 'iron-resize': '_resize'
+            },
+
+            _selectionIndexChanged: function() {
+                //TODO
             },
 
             _specChanged: function(newSpec) {
@@ -132,31 +137,69 @@ Example:
                 this.render();
             },
 
-            render: function() {
+            _watchSelection: function(view, oldView) {
+                if (oldView) {
+                    oldView.on('click.urth', null);
+                }
+                view.on('click.urth', function(event, item) {
+                    if (!item || !item.datum || !item.datum._id) return false;
 
-/*
-var spec =
-{
-  "description": "The Trellis display by Becker et al. helped establish small multiples as a “powerful mechanism for understanding interactions in studies of how a response depends on explanatory variables”. Here we reproduce a trellis of Barley yields from the 1930s, complete with main-effects ordering to facilitate comparison.",
-  "data": {"url": "barley.json"},
-  "mark": "point",
-  "encoding": {
-    "row": {"field": "site", "type": "ordinal"},
-    "x": {"aggregate": "mean", "field": "yield", "type": "quantitative"},
-    "y": {
-      "field": "variety", "type": "ordinal",
-      "sort": {"field": "yield","op": "mean"},
-      "scale": {"bandSize": 12}
-    },
-    "color": {"field": "year", "type": "nominal"}
-  }
-}
-*/
+                    var selection = this.selection || [], selectionInfo = this.selectionInfo || [], indexFound;
+                    selectionInfo.some(function(d, i) {
+                        if (d._id == item._id) {
+                            indexFound = i;
+                            return true;
+                        }
+                    });
+
+                    if (indexFound === undefined) {
+                        // add selected item
+
+                        if (!this.multiSelect) {
+                            // clear prior selection
+                            selection = [], selectionInfo = [];
+
+                            // deselect previous CSS selection
+                            if (this._selectedElement) {
+                                this._selectedElement.classList.remove('selected');
+                                delete this._selectedElement;
+                            }
+                        }
+
+                        selection = selection.concat(item.datum);
+                        selectionInfo = selectionInfo.concat(item); //TODO provide the right details from event
+
+                        this.selectionIndex = item.datum._index; //TODO: map from selectionInfo, return Array for multi
+                    } else {
+                        // remove selected item
+                        selection.splice(indexFound, 1);
+                        selectionInfo.splice(indexFound, 1);
+                        this.selectionIndex = null;
+                    }
+
+                    if (!this.selectionAsObject) {
+                        selection = selection.map(function(data) {
+                            return data; //TODO return this.rows[data._index]
+                        });
+                    }
+
+                    //TODO: use Polymer array methods
+                    this._setSelection(selection);
+                    this._setSelectionInfo(selectionInfo);
+
+                    // toggle visual display of item
+                    this._selectedElement = item._svg;
+                    this._selectedElement.classList.toggle('selected');
+                }.bind(this));
+            },
+
+            render: function() {
                 require(['vega_embed'], function(embed) {
                     embed(this.$.container, { mode: this.mode, spec: this.spec, renderer: 'svg', actions: false }, function(err, result) {
                         if (err) {
                             this.displayErrorMessage('urth-viz-vega: error loading visual: ' + err);
                         } else {
+                            this._watchSelection(result.view, this.view);
                             this.view = result.view;
                             this.fire('urth-viz-render');
                         }
