@@ -36,7 +36,7 @@ Example:
 <!--            <span title="Pie Chart" name="pie" class="fa fa-pie-chart fa-2x"></span>-->
         </iron-selector>
 <!--        <template is="dom-if" if="{{ref}}"> -->
-            <urth-core-dataframe id="df" ref$="{{ref}}" value="{{df}}" rows="{{rows}}" row-as-object="{{!showAsTable}}" auto></urth-core-dataframe>
+            <urth-core-dataframe id="df" ref$="{{ref}}" value="{{df}}" row-as-object="{{!showAsTable}}" auto></urth-core-dataframe>
 <!--        </template> -->
         <template is="dom-if" if="{{!showAsTable}}">
             <urth-viz-vega id="vega" mode="vega-lite" spec="{{spec}}" selection-index="{{selectionIndex}}"></urth-viz-vega>
@@ -44,7 +44,7 @@ Example:
         <template is="dom-if" if="{{showAsTable}}">
             <urth-viz-table datarows="{{df.data}}" columns="{{df.columns}}"></urth-viz-table>
         </template>
-        <content></content>
+        <content id="myDataframe"></content>
     </template>
 </dom-module>
 <script>
@@ -120,8 +120,18 @@ Example:
         ready: function() {
             // If a child dataframe is given, bind that value to df whenever it changes,
             // otherwise use the dataframe instance in the local DOM
-            var df = this.querySelector('urth-core-dataframe') || this.$.df;
-            df.addEventListener('rows-changed', function(event) {
+            var dataframe = this.querySelector('urth-core-dataframe');
+
+            // manually bind values to 'df' property if using child
+            if (dataframe) {
+                this.df = dataframe.value;
+                dataframe.addEventListener('value-changed', function(event) {
+                    this.df = event.detail.value;
+                }.bind(this));
+            }
+
+            dataframe = dataframe || this.$.df;
+            dataframe.addEventListener('rows-changed', function(event) {
                 var values = event.detail.value;
 
                 // tag each element with an index so we can map back to the row from the chart
@@ -138,7 +148,7 @@ Example:
                     this._setSelectionInfo(e.detail.value);
 
                     //TODO: bind selection to this.selectionIndex change instead?
-                    this._setSelection((this.selectionAsObject ? df.rows : df.value.data)[this.selectionIndex]); //TODO: multi 
+                    this._setSelection((this.selectionAsObject ? dataframe.rows : dataframe.value.data)[this.selectionIndex]); //TODO: multi 
                 }.bind(this));
             }.bind(this))
         }
