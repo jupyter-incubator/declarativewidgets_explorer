@@ -7,6 +7,9 @@
 <link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../urth-viz-behaviors/urth-viz-selection-behavior.html">
 <link rel="import" href="../iron-selector/iron-selector.html">
+<link rel="import" href="../paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../paper-listbox/paper-listbox.html">
+<link rel="import" href="../paper-item/paper-item.html">
 <link rel="import" href="../urth-core-dataframe/urth-core-dataframe.html">
 <link rel="import" href="../urth-viz-table/urth-viz-table.html">
 <link rel="import" href="urth-viz-vega.html" is="urth-core-import">
@@ -39,7 +42,23 @@ Example:
             <urth-core-dataframe id="df" ref$="{{ref}}" value="{{df}}" row-as-object="{{!showAsTable}}" auto></urth-core-dataframe>
 <!--        </template> -->
         <template is="dom-if" if="{{!showAsTable}}">
+          <div>
+            <paper-dropdown-menu label="x axis" selected-item-label="{{spec.encoding.x.field}}">
+                <paper-listbox class="dropdown-content" selected="{{independent}}">
+                    <template is="dom-repeat" items="{{df.columns}}">
+                        <paper-item>{{item}}</paper-item>
+                    </template>
+                </paper-listbox>
+            </paper-dropdown-menu>
+            <paper-dropdown-menu label="y axis" selected-item-label="{{spec.encoding.y.field}}">
+                <paper-listbox class="dropdown-content" selected="{{dependent}}">
+                    <template is="dom-repeat" items="{{df.columns}}">
+                        <paper-item>{{item}}</paper-item>
+                    </template>
+                </paper-listbox>
+            </paper-dropdown-menu>
             <urth-viz-vega id="vega" mode="vega-lite" spec="{{spec}}" selection-index="{{selectionIndex}}"></urth-viz-vega>
+          </div>
         </template>
         <template is="dom-if" if="{{showAsTable}}">
             <urth-viz-table datarows="{{df.data}}" columns="{{df.columns}}"></urth-viz-table>
@@ -95,6 +114,10 @@ Example:
             }
         },
 
+        observers: [
+            '_specChanged(spec.encoding.*)'
+        ],
+
         behaviors: [
             Polymer.IronResizableBehavior,
             Urth.DisplayErrorBehavior,
@@ -103,9 +126,7 @@ Example:
 
         _typeChanged: function(newType) {
             if (this.spec && newType != 'table') {
-                this.spec.mark = newType;
-                var vega = this.$$('#vega');
-                vega._specChanged(this.spec);
+                this.set('spec.mark', newType);
             }
         },
 
@@ -113,8 +134,45 @@ Example:
             //TODO
         },
 
+        _specChanged: function(changeRecord) {
+            var channelMatch = changeRecord.path.match(/spec.encoding.([^.]+).field/)
+            if (channelMatch) {
+                this.spec.encoding[channelMatch[1]].type = this._computeType(changeRecord.value);
+            }
+        },
+
+        _computeType: function(column) {
+            var type = 'nominal',
+                row = this.spec.data.values[0],
+                data = row[column];
+
+            if (data instanceof Date) {
+                type = 'temporal';
+            } else if (typeof data == 'number') {
+                type = 'quantitative';
+            }
+
+            return type;
+        },
+
         _showAsTable: function(type) {
             return type == 'table';
+        },
+
+        _selectDefaults: function(df) {
+            var types = df.columns.map(function(field) { return this._computeType(field); }, this);
+
+            var independent = types.indexOf('temporal');
+            if (independent == -1) independent = types.indexOf('quantitative');
+            if (independent == -1) independent = 0;
+            types[independent] = null;
+            this.independent = independent;
+
+            var dependent = types.indexOf('quantitative');
+            if (dependent == -1) dependent = 0;
+            if (dependent == independent) dependent++;
+            types[dependent] = null;
+            this.dependent = dependent;
         },
 
         ready: function() {
@@ -131,6 +189,7 @@ Example:
             }
 
             dataframe = dataframe || this.$.df;
+            dataframe.rowAsObject = true;
             dataframe.addEventListener('rows-changed', function(event) {
                 var values = event.detail.value;
 
@@ -139,17 +198,20 @@ Example:
                     value._index = i;
                 });
 
-                this.spec.data = { values: event.detail.value };
+                this.set('spec.data', { values: values });
 
                 var vega = this.$$('#vega');
-                vega._specChanged(this.spec);
-
                 vega.addEventListener('selection-info-changed', function(e) {
                     this._setSelectionInfo(e.detail.value);
 
                     //TODO: bind selection to this.selectionIndex change instead?
                     this._setSelection((this.selectionAsObject ? dataframe.rows : dataframe.value.data)[this.selectionIndex]); //TODO: multi 
                 }.bind(this));
+
+                if (!this._defaults) {
+                    this._defaults = true;
+                    this._selectDefaults(dataframe);
+                }
             }.bind(this))
         }
     });

@@ -44,10 +44,13 @@ Example:
                     value: 'vega-lite'
                 },
                 spec: {
-                    type: Object,
-                    observer: '_specChanged'
+                    type: Object
                 }
             },
+
+            observers: [
+                '_specChanged(spec.*)'
+            ],
 
             behaviors: [
                 Polymer.IronResizableBehavior,
