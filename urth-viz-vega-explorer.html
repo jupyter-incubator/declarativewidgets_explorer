@@ -4,7 +4,7 @@
 -->
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../urth-core-behaviors/error-display-behavior.html">
-<link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
+<!-- <link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html"> -->
 <link rel="import" href="../urth-viz-behaviors/urth-viz-selection-behavior.html">
 <link rel="import" href="../iron-selector/iron-selector.html">
 <link rel="import" href="../paper-dropdown-menu/paper-dropdown-menu.html">
@@ -35,7 +35,7 @@ Example:
             <span title="Bar Chart" name="bar" class="fa fa-bar-chart fa-2x"></span>
             <span title="Area Chart" name="area" class="fa fa-area-chart fa-2x"></span>
             <span title="Line Chart" name="line" class="fa fa-line-chart fa-2x"></span>
-            <span title="Scatter Chart" name="point" class="fa fa-bullseye fa-2x"></span>
+            <span title="Scatter Chart" name="circle" class="fa fa-bullseye fa-2x"></span>
 <!--            <span title="Pie Chart" name="pie" class="fa fa-pie-chart fa-2x"></span>-->
         </iron-selector>
 <!--        <template is="dom-if" if="{{ref}}"> -->
@@ -57,6 +57,15 @@ Example:
                     </template>
                 </paper-listbox>
             </paper-dropdown-menu>
+            <template is="dom-if" if="{{_hasSize(type)}}" restamp="true">
+              <paper-dropdown-menu label="size" selected-item-label="{{spec.encoding.size.field}}">
+                <paper-listbox class="dropdown-content" selected="{{size}}">
+                    <template is="dom-repeat" items="{{_quantitativeFields(df.columns)}}">
+                        <paper-item>{{item}}</paper-item>
+                    </template>
+                </paper-listbox>
+              </paper-dropdown-menu>
+            </template>
             <urth-viz-vega id="vega" mode="vega-lite" spec="{{spec}}" selection-index="{{selectionIndex}}"></urth-viz-vega>
           </div>
         </template>
@@ -107,8 +116,9 @@ Example:
                     description: "A simple chart with embedded data.",
                     mark: "bar",
                     encoding: {
-                        x: {"field": "Letter", "type": "ordinal"},
-                        y: {"field": "Number", "type": "quantitative"}
+                        x: {},
+                        y: {},
+                        size: {}
                     }
                 }),
             }
@@ -119,14 +129,19 @@ Example:
         ],
 
         behaviors: [
-            Polymer.IronResizableBehavior,
+//            Polymer.IronResizableBehavior,
             Urth.DisplayErrorBehavior,
             Urth.VizSelectionBehavior
         ],
 
         _typeChanged: function(newType) {
-            if (this.spec && newType != 'table') {
+            if (newType != 'table') {
                 this.set('spec.mark', newType);
+            }
+
+            //TODO: need a generic way of associating channels with types
+            if (newType != 'circle') {
+                this.set('spec.encoding.size', {});
             }
         },
 
@@ -135,10 +150,31 @@ Example:
         },
 
         _specChanged: function(changeRecord) {
-            var channelMatch = changeRecord.path.match(/spec.encoding.([^.]+).field/)
+            var channelMatch = changeRecord.path.match(/^spec.encoding.([^.]+).field$/)
             if (channelMatch) {
-                this.spec.encoding[channelMatch[1]].type = this._computeType(changeRecord.value);
+                var type = this._computeType(changeRecord.value),
+                    channel = this.spec.encoding[channelMatch[1]];
+                channel.type = type;
+                if (type === 'temporal') {
+                    channel.timeUnit = this._computeUnit(channel.field, false);
+                    channel.axis = { shortTimeLabels: true};
+                } else {
+                    delete channel.timeUnit;
+                    if (this.spec.axis) delete this.spec.axis.shortTimeLabels;
+                }
             }
+        },
+
+        _computeUnit: function(field, periodic) {
+            var dates = this.spec.data.values.map(function(row) { return row[field]; });
+            var diff = (new Date(Math.max.apply(null, dates)) - new Date(Math.min.apply(null, dates))) / 1000;
+            var unit = 'year';
+
+            if (diff < 60 * 60 * 24) unit = periodic ? 'hours' : 'yearmonthdatehoursminutes';
+            else if (diff < 60 * 60 * 24 * 30) unit = periodic ? 'day' : 'yearmonthdatehours';
+            else if (diff < 60 * 60 * 24 * 30 * 12) unit = periodic ? 'month' : 'yearmonthdate';
+
+            return unit;
         },
 
         _computeType: function(column) {
@@ -157,6 +193,14 @@ Example:
 
         _showAsTable: function(type) {
             return type == 'table';
+        },
+
+        _hasSize: function(type) {
+            return type == 'circle';
+        },
+
+        _quantitativeFields: function(columns) {
+            return columns.filter(function(column) { return this._computeType(column) === 'quantitative'; }, this);
         },
 
         _selectDefaults: function(df) {
