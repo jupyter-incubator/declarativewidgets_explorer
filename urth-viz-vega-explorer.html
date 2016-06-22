@@ -36,11 +36,19 @@ Example:
             <span title="Area Chart" name="area" class="fa fa-area-chart fa-2x"></span>
             <span title="Line Chart" name="line" class="fa fa-line-chart fa-2x"></span>
             <span title="Scatter Chart" name="circle" class="fa fa-bullseye fa-2x"></span>
-<!--            <span title="Pie Chart" name="pie" class="fa fa-pie-chart fa-2x"></span>-->
         </iron-selector>
-<!--        <template is="dom-if" if="{{ref}}"> -->
-            <urth-core-dataframe id="df" ref$="{{ref}}" value="{{df}}" row-as-object="{{!showAsTable}}" auto></urth-core-dataframe>
-<!--        </template> -->
+        <template is="dom-if" if="{{ref}}">
+            <urth-core-dataframe
+                ref$="{{ref}}"
+                value="{{df}}"
+                row-as-object="true"
+                on-rows-changed="_rowsChanged"
+                on-columns-changed="_selectDefaults">
+            </urth-core-dataframe>
+        </template>
+        <template is="dom-if" if="{{showAsTable}}">
+            <urth-viz-table datarows="{{df.data}}" columns="{{df.columns}}"></urth-viz-table>
+        </template>
         <template is="dom-if" if="{{!showAsTable}}">
           <div>
             <paper-dropdown-menu label="x axis" selected-item-label="{{spec.encoding.x.field}}">
@@ -66,11 +74,13 @@ Example:
                 </paper-listbox>
               </paper-dropdown-menu>
             </template>
-            <urth-viz-vega id="vega" mode="vega-lite" spec="{{spec}}" selection-index="{{selectionIndex}}"></urth-viz-vega>
+            <urth-viz-vega
+                mode="vega-lite"
+                spec="{{spec}}"
+                selection-index="{{selectionIndex}}"
+                on-selection-info-changed="_selectionInfoChanged">
+            </urth-viz-vega>
           </div>
-        </template>
-        <template is="dom-if" if="{{showAsTable}}">
-            <urth-viz-table datarows="{{df.data}}" columns="{{df.columns}}"></urth-viz-table>
         </template>
         <content id="myDataframe"></content>
     </template>
@@ -115,6 +125,7 @@ Example:
                 value: new Object({
                     description: "A simple chart with embedded data.",
                     mark: "bar",
+                    data: [],
                     encoding: {
                         x: {},
                         y: {},
@@ -146,7 +157,10 @@ Example:
         },
 
         _selectionIndexChanged: function() {
-            //TODO
+            var obj = this.selectionAsObject ? this.spec && this.spec.data.values : this.df && this.df.data;
+            if (obj) {
+                this._setSelection(obj[this.selectionIndex]); //TODO: multi 
+            }
         },
 
         _specChanged: function(changeRecord) {
@@ -203,8 +217,15 @@ Example:
             return columns.filter(function(column) { return this._computeType(column) === 'quantitative'; }, this);
         },
 
-        _selectDefaults: function(df) {
-            var types = df.columns.map(function(field) { return this._computeType(field); }, this);
+        _selectDefaults: function(event) {
+            if (this._hasDefaults || !this.spec.data.values) {
+                 return;
+            }
+
+            this._hasDefaults = true;
+
+            var df = event.target,
+                types = df.columns.map(function(field) { return this._computeType(field); }, this);
 
             var independent = types.indexOf('temporal');
             if (independent == -1) independent = types.indexOf('quantitative');
@@ -219,44 +240,42 @@ Example:
             this.dependent = dependent;
         },
 
-        ready: function() {
-            // If a child dataframe is given, bind that value to df whenever it changes,
-            // otherwise use the dataframe instance in the local DOM
-            var dataframe = this.querySelector('urth-core-dataframe');
+        _rowsChanged: function(event) {
+            var values = event.detail.value;
 
-            // manually bind values to 'df' property if using child
-            if (dataframe) {
-                this.df = dataframe.value;
-                dataframe.addEventListener('value-changed', function(event) {
-                    this.df = event.detail.value;
-                }.bind(this));
+            // tag each element with an index so we can map back to the row from the chart
+            values.forEach(function(value, i) {
+                value._index = i;
+            });
+
+            this.set('spec.data', { values: values });
+
+            if (this.df && this.df.columns) {
+                this._selectDefaults(event);
             }
+        },
 
-            dataframe = dataframe || this.$.df;
-            dataframe.rowAsObject = true;
-            dataframe.addEventListener('rows-changed', function(event) {
-                var values = event.detail.value;
+        _selectionInfoChanged: function(event) {
+            this._setSelectionInfo(event.detail.value);
+        },
 
-                // tag each element with an index so we can map back to the row from the chart
-                values.forEach(function(value, i) {
-                    value._index = i;
-                });
+        ready: function() {
+            // If no dataframe instance is specified with `ref`, look instead for a child dataframe
+            // and  bind that value to df whenever it changes,
+            if (!this.ref) {
+                var dataframe = this.querySelector('urth-core-dataframe');
 
-                this.set('spec.data', { values: values });
-
-                var vega = this.$$('#vega');
-                vega.addEventListener('selection-info-changed', function(e) {
-                    this._setSelectionInfo(e.detail.value);
-
-                    //TODO: bind selection to this.selectionIndex change instead?
-                    this._setSelection((this.selectionAsObject ? dataframe.rows : dataframe.value.data)[this.selectionIndex]); //TODO: multi 
-                }.bind(this));
-
-                if (!this._defaults) {
-                    this._defaults = true;
-                    this._selectDefaults(dataframe);
+                // manually bind values to 'df' property if using child
+                if (dataframe) {
+                    this.df = dataframe.value;
+                    dataframe.rowAsObject = true;
+                    dataframe.addEventListener('value-changed', function(event) {
+                        this.df = event.detail.value;
+                    }.bind(this));
+                    dataframe.addEventListener('columns-changed', this._selectDefaults.bind(this));
+                    dataframe.addEventListener('rows-changed', this._rowsChanged.bind(this));
                 }
-            }.bind(this))
+            }
         }
     });
 
