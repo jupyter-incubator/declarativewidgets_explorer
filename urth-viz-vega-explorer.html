@@ -3,13 +3,17 @@
 # Distributed under the terms of the Modified BSD License.
 -->
 <link rel="import" href="../polymer/polymer.html">
+
 <link rel="import" href="../urth-core-behaviors/error-display-behavior.html">
 <!-- <link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html"> -->
 <link rel="import" href="../urth-viz-behaviors/urth-viz-selection-behavior.html">
+
 <link rel="import" href="../iron-selector/iron-selector.html">
 <link rel="import" href="../paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../paper-listbox/paper-listbox.html">
 <link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-slider/paper-slider.html">
+
 <link rel="import" href="../urth-core-dataframe/urth-core-dataframe.html">
 <link rel="import" href="../urth-viz-table/urth-viz-table.html">
 <link rel="import" href="urth-viz-vega.html" is="urth-core-import">
@@ -41,6 +45,7 @@ Example:
             <urth-core-dataframe
                 ref$="{{ref}}"
                 value="{{df}}"
+                limit="{{limit}}"
                 row-as-object="true"
                 on-rows-changed="_rowsChanged"
                 on-columns-changed="_selectDefaults">
@@ -82,7 +87,8 @@ Example:
             </urth-viz-vega>
           </div>
         </template>
-        <content id="myDataframe"></content>
+        <paper-slider pin value="{{limit}}" min="10" value="20"></paper-slider>
+        <content></content>
     </template>
 </dom-module>
 <script>
@@ -102,13 +108,17 @@ Example:
             type: {
                 type: String,
                 value: 'bar',
-                notify: true,
                 observer: '_typeChanged'
             },
 
             showAsTable: {
                 type: Boolean,
                 computed: '_showAsTable(type)'
+            },
+
+            limit: {
+                type: Number,
+                notify: true
             },
 
             /**
@@ -125,7 +135,7 @@ Example:
                 value: new Object({
                     description: "A simple chart with embedded data.",
                     mark: "bar",
-                    data: [],
+                    data: { values: []},
                     encoding: {
                         x: {},
                         y: {},
@@ -218,7 +228,7 @@ Example:
         },
 
         _selectDefaults: function(event) {
-            if (this._hasDefaults || !this.spec.data.values) {
+            if (this._hasDefaults || !this.spec.data.values.length) {
                  return;
             }
 
@@ -250,7 +260,7 @@ Example:
 
             this.set('spec.data', { values: values });
 
-            if (this.df && this.df.columns) {
+            if (event.target.columns) {
                 this._selectDefaults(event);
             }
         },
@@ -269,6 +279,10 @@ Example:
                 if (dataframe) {
                     this.df = dataframe.value;
                     dataframe.rowAsObject = true;
+                    dataframe.limit = this.limit;
+                    this.addEventListener('limit-changed', function(event) {
+                        dataframe.limit = event.detail.value;
+                    }.bind(this));
                     dataframe.addEventListener('value-changed', function(event) {
                         this.df = event.detail.value;
                     }.bind(this));
