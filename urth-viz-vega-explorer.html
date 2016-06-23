@@ -132,16 +132,18 @@ Example:
 
             spec: {
                 type: Object,
-                value: new Object({
-                    description: "A simple chart with embedded data.",
-                    mark: "bar",
-                    data: { values: []},
-                    encoding: {
-                        x: {},
-                        y: {},
-                        size: {}
-                    }
-                }),
+                value: function() {
+                    return {
+                        description: "A simple chart with embedded data.",
+                        mark: "bar",
+                        data: { values: []},
+                        encoding: {
+                            x: {},
+                            y: {},
+                            size: {}
+                        }
+                    };
+                }
             }
         },
 
