@@ -178,7 +178,7 @@ Example:
         _specChanged: function(changeRecord) {
             var channelMatch = changeRecord.path.match(/^spec.encoding.([^.]+).field$/)
             if (channelMatch) {
-                var type = this._computeType(changeRecord.value),
+                var type = this._columnType(this.df.column_types[this.df.columns.indexOf(changeRecord.value)]),
                     channel = this.spec.encoding[channelMatch[1]];
                 channel.type = type;
                 if (type === 'temporal') {
@@ -203,14 +203,13 @@ Example:
             return unit;
         },
 
-        _computeType: function(column) {
-            var type = 'nominal',
-                row = this.spec.data.values[0],
-                data = row[column];
+        _columnType: function(datatype) {
+            var type = 'nominal';
 
-            if (data instanceof Date) {
+            //TODO: Need to settle on normalized set of data types, see #426
+            if (/^[Dd]ate/.test(datatype)) {
                 type = 'temporal';
-            } else if (typeof data == 'number') {
+            } else if (/^(?:float|int)/.test(datatype)) {
                 type = 'quantitative';
             }
 
@@ -226,7 +225,7 @@ Example:
         },
 
         _quantitativeFields: function(columns) {
-            return columns.filter(function(column) { return this._computeType(column) === 'quantitative'; }, this);
+            return columns.filter(function(column, i) { return this._columnType(this.df.column_types[i]) === 'quantitative'; }, this);
         },
 
         _selectDefaults: function(event) {
@@ -237,7 +236,7 @@ Example:
             this._hasDefaults = true;
 
             var df = event.target,
-                types = df.columns.map(function(field) { return this._computeType(field); }, this);
+                types = df.columnTypes.map(function(datatype) { return this._columnType(datatype); }, this);
 
             var independent = types.indexOf('temporal');
             if (independent == -1) independent = types.indexOf('quantitative');
@@ -261,10 +260,6 @@ Example:
             });
 
             this.set('spec.data', { values: values });
-
-            if (event.target.columns) {
-                this._selectDefaults(event);
-            }
         },
 
         _selectionInfoChanged: function(event) {
