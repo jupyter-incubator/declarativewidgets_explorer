@@ -229,26 +229,26 @@ Example:
         },
 
         _selectDefaults: function(event) {
-            if (this._hasDefaults || !this.spec.data.values.length) {
-                 return;
-            }
+            var dataframe = event.target,
+                types = dataframe.columnTypes.map(function(datatype) { return this._columnType(datatype); }, this);
 
-            this._hasDefaults = true;
+            // regenerate both dropdown label based on latest listbox items
+            this.independent = null;
+            this.dependent = null;
 
-            var df = event.target,
-                types = df.columnTypes.map(function(datatype) { return this._columnType(datatype); }, this);
+            this.async(function() {
+                var independent = types.indexOf('temporal');
+                if (independent == -1) independent = types.indexOf('quantitative');
+                if (independent == -1) independent = 0;
+                types[independent] = null;
+                this.independent = independent;
 
-            var independent = types.indexOf('temporal');
-            if (independent == -1) independent = types.indexOf('quantitative');
-            if (independent == -1) independent = 0;
-            types[independent] = null;
-            this.independent = independent;
-
-            var dependent = types.indexOf('quantitative');
-            if (dependent == -1) dependent = 0;
-            if (dependent == independent) dependent++;
-            types[dependent] = null;
-            this.dependent = dependent;
+                var dependent = types.indexOf('quantitative');
+                if (dependent == -1) dependent = 0;
+                if (dependent == independent) dependent++;
+                types[dependent] = null;
+                this.dependent = dependent;
+            });
         },
 
         _rowsChanged: function(event) {
@@ -283,8 +283,12 @@ Example:
                     dataframe.addEventListener('value-changed', function(event) {
                         this.df = event.detail.value;
                     }.bind(this));
-                    dataframe.addEventListener('columns-changed', this._selectDefaults.bind(this));
-                    dataframe.addEventListener('rows-changed', this._rowsChanged.bind(this));
+                    dataframe.addEventListener('columns-changed', function (event) {
+                        this.async(this._selectDefaults.bind(this, event));
+                    }.bind(this));
+                    dataframe.addEventListener('rows-changed', function(event) {
+                        this.async(this._rowsChanged.bind(this, event));
+                    }.bind(this));
                 }
             }
         }
