@@ -67,9 +67,8 @@ Example:
             },
 
             _specChanged: function(newSpec) {
-                if (!newSpec || !this.view) { return; }
+                if (!this.isReady) { return; }
 
-                this.$.container.innerHTML = '';
                 this.render();
             },
 
@@ -137,6 +136,7 @@ Example:
                     return;
                 }
 
+                this.isReady = true;
                 this.render();
             },
 
@@ -144,6 +144,11 @@ Example:
                 if (oldView) {
                     oldView.on('click.urth', null);
                 }
+
+                if (!view) {
+                    return;
+                }
+
                 view.on('click.urth', function(event, item) {
                     if (!item || !item.datum || !item.datum._id) return false;
 
@@ -198,11 +203,14 @@ Example:
 
             render: function() {
                 require(['vega_embed'], function(embed) {
+                    this.$.container.innerHTML = '';
                     embed(this.$.container, { mode: this.mode, spec: this.spec, renderer: 'svg', actions: false }, function(err, result) {
+                        this._watchSelection(result && result.view, this.view);
                         if (err) {
+                            delete this.view;
                             this.displayErrorMessage('urth-viz-vega: error loading visual: ' + err);
+                            console.error(err.stack);
                         } else {
-                            this._watchSelection(result.view, this.view);
                             this.view = result.view;
                             this.fire('urth-viz-render');
                         }
