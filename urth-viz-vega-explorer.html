@@ -11,6 +11,8 @@
 <link rel="import" href="../iron-selector/iron-selector.html">
 <link rel="import" href="../paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../paper-listbox/paper-listbox.html">
+<link rel="import" href="../paper-card/paper-card.html">
+<link rel="import" href="../paper-item/paper-input.html">
 <link rel="import" href="../paper-item/paper-item.html">
 <link rel="import" href="../paper-slider/paper-slider.html">
 
@@ -29,18 +31,51 @@ Example:
 @element urth-viz-vega-explorer
 -->
 <dom-module id="urth-viz-vega-explorer">
-    <link rel="import" type="css" href="../fontawesome/css/font-awesome.min.css">
     <template>
-        <style>
-          .iron-selected { background-color: yellow; }
+        <style is="custom-style">
+            .urth-viz-vega-explorer {
+                display: block;
+            }
+
+            .viz-explorer-controls {
+                float: left;
+                width: 33%;
+            }
+            .viz-explorer-controls-section {
+                width: calc(100% - 1em);
+                margin-bottom: 1em;
+            }
+
+            .viz-explorer-viz {
+                float: right;
+                width: 67%;
+            }
+
+            paper-dropdown-menu,
+            paper-input {
+                width: 200px;
+            }
+
+            :host {
+                --paper-item-min-height: 24px;
+                --paper-card-header: {
+                    background-color: #eee;
+                    border-bottom: 1px solid #e2e2e2;
+                    line-height: 0;
+                };
+                --paper-card-header-text: {
+                    font-size: 1em;
+                };
+                --paper-item: {
+                    font-size: 1em;
+                };
+                --paper-input-container-input: {
+                    font-size: 1em;
+                };
+            }
         </style>
-        <iron-selector attr-for-selected="name" selected="{{type}}">
-            <span title="Table" name="table" class="fa fa-table fa-2x"></span>
-            <span title="Bar Chart" name="bar" class="fa fa-bar-chart fa-2x"></span>
-            <span title="Area Chart" name="area" class="fa fa-area-chart fa-2x"></span>
-            <span title="Line Chart" name="line" class="fa fa-line-chart fa-2x"></span>
-            <span title="Scatter Chart" name="circle" class="fa fa-bullseye fa-2x"></span>
-        </iron-selector>
+
+        <!-- create dataframe if set as "ref" attribute -->
         <template is="dom-if" if="{{ref}}">
             <urth-core-dataframe
                 ref$="{{ref}}"
@@ -51,43 +86,82 @@ Example:
                 on-columns-changed="_selectDefaults">
             </urth-core-dataframe>
         </template>
-        <template is="dom-if" if="{{showAsTable}}">
-            <urth-viz-table datarows="{{df.data}}" columns="{{df.columns}}"></urth-viz-table>
-        </template>
-        <template is="dom-if" if="{{!showAsTable}}">
-          <div>
-            <paper-dropdown-menu label="x axis" selected-item-label="{{spec.encoding.x.field}}">
-                <paper-listbox class="dropdown-content" selected="{{independent}}">
-                    <template is="dom-repeat" items="{{df.columns}}">
-                        <paper-item>{{item}}</paper-item>
-                    </template>
-                </paper-listbox>
-            </paper-dropdown-menu>
-            <paper-dropdown-menu label="y axis" selected-item-label="{{spec.encoding.y.field}}">
-                <paper-listbox class="dropdown-content" selected="{{dependent}}">
-                    <template is="dom-repeat" items="{{df.columns}}">
-                        <paper-item>{{item}}</paper-item>
-                    </template>
-                </paper-listbox>
-            </paper-dropdown-menu>
-            <template is="dom-if" if="{{_hasSize(type)}}" restamp="true">
-              <paper-dropdown-menu label="size" selected-item-label="{{spec.encoding.size.field}}">
-                <paper-listbox class="dropdown-content" selected="{{size}}">
-                    <template is="dom-repeat" items="{{_quantitativeFields(df.columns)}}">
-                        <paper-item>{{item}}</paper-item>
-                    </template>
-                </paper-listbox>
-              </paper-dropdown-menu>
+
+        <!-- controls section -->
+        <div class="viz-explorer-controls">
+            <!-- select viz type -->
+            <paper-card class="viz-explorer-controls-section" heading="Viz">
+                <div class="card-content">
+                    <paper-dropdown-menu label="Viz type">
+                        <paper-listbox class="dropdown-content" attr-for-selected="name" selected="{{type}}">
+                            <paper-item name="table">Table</paper-item>
+                            <paper-item name="bar">Bar Chart</paper-item>
+                            <paper-item name="area">Area Chart</paper-item>
+                            <paper-item name="line">Line Chart</paper-item>
+                            <paper-item name="circle">Scatter Chart</paper-item>
+                        </paper-listbox>
+                    </paper-dropdown-menu>
+                    <paper-input label="Limit" value="{{limit}}"></paper-input>
+                </div>
+            </paper-card>
+
+            <!-- select viz properties -->
+            <template is="dom-if" if="{{!showAsTable}}">
+                <paper-card class="viz-explorer-controls-section" heading="Viz Options">
+                    <div class="card-content">
+                        <paper-dropdown-menu label="x axis" selected-item-label="{{spec.encoding.x.field}}">
+                            <paper-listbox class="dropdown-content" selected="{{independent}}">
+                                <template is="dom-repeat" items="{{df.columns}}">
+                                    <paper-item>{{item}}</paper-item>
+                                </template>
+                            </paper-listbox>
+                        </paper-dropdown-menu>
+                        <paper-dropdown-menu label="y axis" selected-item-label="{{spec.encoding.y.field}}">
+                            <paper-listbox class="dropdown-content" selected="{{dependent}}">
+                                <template is="dom-repeat" items="{{df.columns}}">
+                                    <paper-item>{{item}}</paper-item>
+                                </template>
+                            </paper-listbox>
+                        </paper-dropdown-menu>
+                        <template is="dom-if" if="{{_hasSize(type)}}" restamp="true">
+                            <paper-dropdown-menu label="size" selected-item-label="{{spec.encoding.size.field}}">
+                                <paper-listbox class="dropdown-content" selected="{{size}}">
+                                    <template is="dom-repeat" items="{{_quantitativeFields(df.columns)}}">
+                                        <paper-item>{{item}}</paper-item>
+                                    </template>
+                                </paper-listbox>
+                            </paper-dropdown-menu>
+                        </template>
+                    </div>
+                </paper-card>
             </template>
-            <urth-viz-vega
-                mode="vega-lite"
-                spec="{{spec}}"
-                selection-index="{{selectionIndex}}"
-                on-selection-info-changed="_selectionInfoChanged">
-            </urth-viz-vega>
-          </div>
-        </template>
-        <paper-slider pin value="{{limit}}" min="10" value="20"></paper-slider>
+
+            <!-- dataframe query -->
+            <paper-card class="viz-explorer-controls-section" heading="Query">
+                <div class="card-content">
+                    <content select="urth-viz-query"></content>
+                </div>
+            </paper-card>
+        </div>
+
+        <!-- viz section -->
+        <div class="viz-explorer-viz">
+            <!-- table view -->
+            <template is="dom-if" if="{{showAsTable}}">
+                <urth-viz-table datarows="{{df.data}}" columns="{{df.columns}}"></urth-viz-table>
+            </template>
+
+            <!-- viz view -->
+            <template is="dom-if" if="{{!showAsTable}}">
+                <urth-viz-vega
+                    mode="vega-lite"
+                    spec="{{spec}}"
+                    selection-index="{{selectionIndex}}"
+                    on-selection-info-changed="_selectionInfoChanged">
+                </urth-viz-vega>
+            </template>
+        </div>
+
         <content></content>
     </template>
 </dom-module>
@@ -118,7 +192,8 @@ Example:
 
             limit: {
                 type: Number,
-                notify: true
+                notify: true,
+                value: 20
             },
 
             /**
@@ -171,7 +246,7 @@ Example:
         _selectionIndexChanged: function() {
             var obj = this.selectionAsObject ? this.spec && this.spec.data.values : this.df && this.df.data;
             if (obj) {
-                this._setSelection(obj[this.selectionIndex]); //TODO: multi 
+                this._setSelection(obj[this.selectionIndex]); //TODO: multi
             }
         },
 
