@@ -8,16 +8,14 @@
 <!-- <link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html"> -->
 <link rel="import" href="../urth-viz-behaviors/urth-viz-selection-behavior.html">
 
-<link rel="import" href="../iron-selector/iron-selector.html">
 <link rel="import" href="../paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../paper-listbox/paper-listbox.html">
-<link rel="import" href="../paper-card/paper-card.html">
-<link rel="import" href="../paper-item/paper-input.html">
+<link rel="import" href="../paper-input/paper-input.html">
 <link rel="import" href="../paper-item/paper-item.html">
-<link rel="import" href="../paper-slider/paper-slider.html">
 
 <link rel="import" href="../urth-core-dataframe/urth-core-dataframe.html">
 <link rel="import" href="../urth-viz-table/urth-viz-table.html">
+<link rel="import" href="paper-card-collapse.html">
 <link rel="import" href="urth-viz-vega.html" is="urth-core-import">
 
 <!--
@@ -32,7 +30,7 @@ Example:
 -->
 <dom-module id="urth-viz-vega-explorer">
     <template>
-        <style is="custom-style">
+        <style>
             .urth-viz-vega-explorer {
                 display: block;
             }
@@ -56,21 +54,26 @@ Example:
                 width: 200px;
             }
 
+            paper-card-collapse {
+                display: block;
+            }
+
             :host {
                 --paper-item-min-height: 24px;
-                --paper-card-header: {
-                    background-color: #eee;
-                    border-bottom: 1px solid #e2e2e2;
-                    line-height: 0;
-                };
-                --paper-card-header-text: {
-                    font-size: 1em;
-                };
                 --paper-item: {
-                    font-size: 1em;
+                    font-size: 14px;
+                };
+                --paper-input-container: {
+                    padding: 4px 0;
                 };
                 --paper-input-container-input: {
-                    font-size: 1em;
+                    font-size: 14px;
+                };
+                --paper-input-container-label: {
+                    font-size: 14px;
+                };
+                --paper-input-container-label-floating: {
+                    font-size: 16px;
                 };
             }
         </style>
@@ -90,58 +93,52 @@ Example:
         <!-- controls section -->
         <div class="viz-explorer-controls">
             <!-- select viz type -->
-            <paper-card class="viz-explorer-controls-section" heading="Viz">
-                <div class="card-content">
-                    <paper-dropdown-menu label="Viz type">
-                        <paper-listbox class="dropdown-content" attr-for-selected="name" selected="{{type}}">
-                            <paper-item name="table">Table</paper-item>
-                            <paper-item name="bar">Bar Chart</paper-item>
-                            <paper-item name="area">Area Chart</paper-item>
-                            <paper-item name="line">Line Chart</paper-item>
-                            <paper-item name="circle">Scatter Chart</paper-item>
-                        </paper-listbox>
-                    </paper-dropdown-menu>
-                    <paper-input label="Limit" value="{{limit}}"></paper-input>
-                </div>
-            </paper-card>
+            <paper-card-collapse class="viz-explorer-controls-section" heading="Viz">
+                <paper-dropdown-menu label="Viz type">
+                    <paper-listbox class="dropdown-content" attr-for-selected="name" selected="{{type}}">
+                        <paper-item name="table">Table</paper-item>
+                        <paper-item name="bar">Bar Chart</paper-item>
+                        <paper-item name="area">Area Chart</paper-item>
+                        <paper-item name="line">Line Chart</paper-item>
+                        <paper-item name="circle">Scatter Chart</paper-item>
+                    </paper-listbox>
+                </paper-dropdown-menu>
+                <paper-input label="Limit" value="{{limit}}"></paper-input>
+            </paper-card-collapse>
 
             <!-- select viz properties -->
             <template is="dom-if" if="{{!showAsTable}}">
-                <paper-card class="viz-explorer-controls-section" heading="Viz Options">
-                    <div class="card-content">
-                        <paper-dropdown-menu label="x axis" selected-item-label="{{spec.encoding.x.field}}">
-                            <paper-listbox class="dropdown-content" selected="{{independent}}">
-                                <template is="dom-repeat" items="{{df.columns}}">
+                <paper-card-collapse class="viz-explorer-controls-section" heading="Viz Options">
+                    <paper-dropdown-menu label="x axis" selected-item-label="{{spec.encoding.x.field}}">
+                        <paper-listbox class="dropdown-content" selected="{{independent}}">
+                            <template is="dom-repeat" items="{{df.columns}}">
+                                <paper-item>{{item}}</paper-item>
+                            </template>
+                        </paper-listbox>
+                    </paper-dropdown-menu>
+                    <paper-dropdown-menu label="y axis" selected-item-label="{{spec.encoding.y.field}}">
+                        <paper-listbox class="dropdown-content" selected="{{dependent}}">
+                            <template is="dom-repeat" items="{{df.columns}}">
+                                <paper-item>{{item}}</paper-item>
+                            </template>
+                        </paper-listbox>
+                    </paper-dropdown-menu>
+                    <template is="dom-if" if="{{_hasSize(type)}}" restamp="true">
+                        <paper-dropdown-menu label="size" selected-item-label="{{spec.encoding.size.field}}">
+                            <paper-listbox class="dropdown-content" selected="{{size}}">
+                                <template is="dom-repeat" items="{{_quantitativeFields(df.columns)}}">
                                     <paper-item>{{item}}</paper-item>
                                 </template>
                             </paper-listbox>
                         </paper-dropdown-menu>
-                        <paper-dropdown-menu label="y axis" selected-item-label="{{spec.encoding.y.field}}">
-                            <paper-listbox class="dropdown-content" selected="{{dependent}}">
-                                <template is="dom-repeat" items="{{df.columns}}">
-                                    <paper-item>{{item}}</paper-item>
-                                </template>
-                            </paper-listbox>
-                        </paper-dropdown-menu>
-                        <template is="dom-if" if="{{_hasSize(type)}}" restamp="true">
-                            <paper-dropdown-menu label="size" selected-item-label="{{spec.encoding.size.field}}">
-                                <paper-listbox class="dropdown-content" selected="{{size}}">
-                                    <template is="dom-repeat" items="{{_quantitativeFields(df.columns)}}">
-                                        <paper-item>{{item}}</paper-item>
-                                    </template>
-                                </paper-listbox>
-                            </paper-dropdown-menu>
-                        </template>
-                    </div>
-                </paper-card>
+                    </template>
+                </paper-card-collapse>
             </template>
 
             <!-- dataframe query -->
-            <paper-card class="viz-explorer-controls-section" heading="Query">
-                <div class="card-content">
-                    <content select="urth-viz-query"></content>
-                </div>
-            </paper-card>
+            <paper-card-collapse class="viz-explorer-controls-section" heading="Query">
+                <content select="urth-viz-query"></content>
+            </paper-card-collapse>
         </div>
 
         <!-- viz section -->
