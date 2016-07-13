@@ -8,10 +8,12 @@
 <!-- <link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html"> -->
 <link rel="import" href="../urth-viz-behaviors/urth-viz-selection-behavior.html">
 
+<link rel="import" href="../iron-collapse/iron-collapse.html">
 <link rel="import" href="../paper-dropdown-menu/paper-dropdown-menu.html">
-<link rel="import" href="../paper-listbox/paper-listbox.html">
+<link rel="import" href="../paper-button/paper-icon-button.html">
 <link rel="import" href="../paper-input/paper-input.html">
 <link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-listbox/paper-listbox.html">
 
 <link rel="import" href="../urth-core-dataframe/urth-core-dataframe.html">
 <link rel="import" href="../urth-viz-table/urth-viz-table.html">
@@ -31,22 +33,30 @@ Example:
 <dom-module id="urth-viz-vega-explorer">
     <template>
         <style>
-            .viz-explorer-controls {
+            #viz-explorer-controls {
                 box-sizing: border-box;
                 padding-right: 1em;
-                width: 295px;
             }
-            .viz-explorer-controls-section {
-                width: 100%;
-                margin-bottom: 1em;
-            }
-            .viz-explorer-viz {
+
+            #viz-explorer-viz {
                 -webkit-flex-grow: 1;
                 flex-grow: 1;
             }
 
+            #controls-collapse-btn {
+                margin-left: -20px;
+                margin-right: -5px;
+                transition: transform 0.5s;
+            }
+
+            .viz-explorer-controls-section {
+                width: 100%;
+                margin-bottom: 1em;
+            }
+
             paper-dropdown-menu,
             paper-input {
+                display: block;
                 width: 200px;
             }
 
@@ -93,8 +103,11 @@ Example:
             </urth-core-dataframe>
         </template>
 
+        <!-- Button to collapse contols -->
+        <paper-icon-button id="controls-collapse-btn" icon="chevron-left" on-tap="_toggleCollapse" noink="true"></paper-icon-button>
+
         <!-- controls section -->
-        <div class="viz-explorer-controls">
+        <iron-collapse id="viz-explorer-controls" horizontal="true" opened="true">
             <!-- select viz type -->
             <paper-card-collapse class="viz-explorer-controls-section" heading="Viz">
                 <paper-dropdown-menu label="Viz type">
@@ -142,10 +155,10 @@ Example:
             <paper-card-collapse class="viz-explorer-controls-section" heading="Query">
                 <content select="urth-viz-query"></content>
             </paper-card-collapse>
-        </div>
+        </iron-collapse>
 
         <!-- viz section -->
-        <div class="viz-explorer-viz">
+        <div id="viz-explorer-viz">
             <!-- table view -->
             <template is="dom-if" if="{{showAsTable}}">
                 <urth-viz-table datarows="{{df.data}}" columns="{{df.columns}}"></urth-viz-table>
@@ -339,6 +352,13 @@ Example:
 
         _selectionInfoChanged: function(event) {
             this._setSelectionInfo(event.detail.value);
+        },
+
+        _toggleCollapse: function() {
+            this.$['viz-explorer-controls'].toggle();
+            var collapseBtn = this.$['controls-collapse-btn'];
+            var transform = collapseBtn.style.transform;
+            collapseBtn.style.transform = transform === 'rotateY(180deg)' ? 'rotateY(0deg)' : 'rotateY(180deg)';
         },
 
         ready: function() {
