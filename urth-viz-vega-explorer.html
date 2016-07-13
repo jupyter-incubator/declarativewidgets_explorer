@@ -31,22 +31,18 @@ Example:
 <dom-module id="urth-viz-vega-explorer">
     <template>
         <style>
-            .urth-viz-vega-explorer {
-                display: block;
-            }
-
             .viz-explorer-controls {
-                float: left;
-                width: 33%;
+                box-sizing: border-box;
+                padding-right: 1em;
+                width: 295px;
             }
             .viz-explorer-controls-section {
-                width: calc(100% - 1em);
+                width: 100%;
                 margin-bottom: 1em;
             }
-
             .viz-explorer-viz {
-                float: right;
-                width: 67%;
+                -webkit-flex-grow: 1;
+                flex-grow: 1;
             }
 
             paper-dropdown-menu,
@@ -59,6 +55,13 @@ Example:
             }
 
             :host {
+                display: -ms-flexbox;
+                display: -webkit-flex;
+                display: flex;
+                -ms-flex-direction: row;
+                -webkit-flex-direction: row;
+                flex-direction: row;
+
                 --paper-item-min-height: 24px;
                 --paper-item: {
                     font-size: 14px;
