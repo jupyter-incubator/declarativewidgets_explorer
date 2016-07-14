@@ -318,7 +318,7 @@ Example:
 
         _selectDefaults: function(event) {
             var dataframe = event.target,
-                types = dataframe.columnTypes.map(function(datatype) { return this._columnType(datatype); }, this);
+                types = dataframe.value.column_types.map(function(datatype) { return this._columnType(datatype); }, this);
 
             // regenerate both dropdown label based on latest listbox items
             this.independent = null;
