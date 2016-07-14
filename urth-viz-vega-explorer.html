@@ -16,6 +16,7 @@
 <link rel="import" href="../paper-listbox/paper-listbox.html">
 
 <link rel="import" href="../urth-core-dataframe/urth-core-dataframe.html">
+<link rel="import" href="../urth-viz-query/urth-viz-query.html">
 <link rel="import" href="../urth-viz-table/urth-viz-table.html">
 <link rel="import" href="paper-card-collapse.html">
 <link rel="import" href="urth-viz-vega.html" is="urth-core-import">
@@ -93,14 +94,16 @@ Example:
 
         <!-- create dataframe if set as "ref" attribute -->
         <template is="dom-if" if="{{ref}}">
-            <urth-core-dataframe
-                ref$="{{ref}}"
-                value="{{df}}"
-                limit="{{limit}}"
-                row-as-object="true"
-                on-rows-changed="_rowsChanged"
-                on-columns-changed="_selectDefaults">
-            </urth-core-dataframe>
+            <urth-viz-query>
+                <urth-core-dataframe
+                    ref$="{{ref}}"
+                    value="{{df}}"
+                    limit="{{limit}}"
+                    row-as-object="true"
+                    on-rows-changed="_rowsChanged"
+                    on-columns-changed="_selectDefaults">
+                </urth-core-dataframe>
+            </urth-viz-query>
         </template>
 
         <!-- Button to collapse contols -->
@@ -153,7 +156,7 @@ Example:
 
             <!-- dataframe query -->
             <paper-card-collapse class="viz-explorer-controls-section" heading="Query">
-                <content select="urth-viz-query"></content>
+                <content id="viz-query" select="urth-viz-query"></content>
             </paper-card-collapse>
         </iron-collapse>
 
@@ -362,9 +365,13 @@ Example:
         },
 
         ready: function() {
-            // If no dataframe instance is specified with `ref`, look instead for a child dataframe
-            // and  bind that value to df whenever it changes,
-            if (!this.ref) {
+            if (this.ref) {
+                // Move template-generated query/dataframe to content
+                //TODO: not ready until template dom-if is complete. Is there a callback for this?
+                this.async(function() { this.$['viz-query'].appendChild(this.$$('urth-viz-query')); }, 1000);
+            } else {
+                // If no dataframe instance is specified with `ref`, look instead for a child dataframe
+                // and  bind that value to df whenever it changes,
                 var dataframe = this.querySelector('urth-core-dataframe');
 
                 // manually bind values to 'df' property if using child
