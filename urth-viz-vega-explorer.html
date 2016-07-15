@@ -129,24 +129,10 @@ Example:
             <!-- select viz properties -->
             <template is="dom-if" if="{{!showAsTable}}">
                 <paper-card-collapse class="viz-explorer-controls-section" heading="Viz Options">
-                    <paper-dropdown-menu label="x axis" selected-item-label="{{spec.encoding.x.field}}">
-                        <paper-listbox class="dropdown-content" selected="{{independent}}">
-                            <template is="dom-repeat" items="{{df.columns}}">
-                                <paper-item>{{item}}</paper-item>
-                            </template>
-                        </paper-listbox>
-                    </paper-dropdown-menu>
-                    <paper-dropdown-menu label="y axis" selected-item-label="{{spec.encoding.y.field}}">
-                        <paper-listbox class="dropdown-content" selected="{{dependent}}">
-                            <template is="dom-repeat" items="{{df.columns}}">
-                                <paper-item>{{item}}</paper-item>
-                            </template>
-                        </paper-listbox>
-                    </paper-dropdown-menu>
-                    <template is="dom-if" if="{{_hasSize(type)}}" restamp="true">
-                        <paper-dropdown-menu label="size" selected-item-label="{{spec.encoding.size.field}}">
-                            <paper-listbox class="dropdown-content" selected="{{size}}">
-                                <template is="dom-repeat" items="{{_quantitativeFields(df.columns)}}">
+                    <template is="dom-repeat" items="{{options}}" as="option">
+                        <paper-dropdown-menu label="{{option.label}}" selected-item-label="{{option.column}}">
+                            <paper-listbox class="dropdown-content" selected="{{option.index}}">
+                                <template is="dom-repeat" items="{{df.columns}}" filter="{{option.filter}}">
                                     <paper-item>{{item}}</paper-item>
                                 </template>
                             </paper-listbox>
@@ -222,6 +208,20 @@ Example:
             },
              */
 
+            options: {
+                type: Array
+            },
+
+            xOption: {
+                type: Object,
+                value: function() { return { prop: 'x', label: 'x axis' }; }
+            },
+
+            yOption: {
+                type: Object,
+                value: function() { return { prop: 'y', label: 'y axis' }; }
+            },
+
             spec: {
                 type: Object,
                 value: function() {
@@ -229,18 +229,16 @@ Example:
                         description: "A simple chart with embedded data.",
                         mark: "bar",
                         data: { values: []},
-                        encoding: {
-                            x: {},
-                            y: {},
-                            size: {}
-                        }
+                        encoding: {}
                     };
                 }
             }
         },
 
         observers: [
-            '_specChanged(spec.encoding.*)'
+            '_specChanged(spec.encoding.*)',
+            '_pickOptions(type)',
+            '_optionsChanged(options.*)'
         ],
 
         behaviors: [
@@ -252,11 +250,6 @@ Example:
         _typeChanged: function(newType) {
             if (newType != 'table') {
                 this.set('spec.mark', newType);
-            }
-
-            //TODO: need a generic way of associating channels with types
-            if (newType != 'circle') {
-                this.set('spec.encoding.size', {});
             }
         },
 
@@ -280,6 +273,42 @@ Example:
                     delete channel.timeUnit;
                     if (this.spec.axis) delete this.spec.axis.shortTimeLabels;
                 }
+            }
+        },
+
+        _pickOptions: function(newType) {
+            // clear out any fields in the spec from previous type
+            this.set('spec.encoding', {});
+            this.set('options', []);
+
+            // rebuild options and corresponding spec
+            if (this._optionsMap) {
+                this._optionsMap[newType].forEach(function(option) { this.push('options', option); }, this);
+            }
+        },
+
+        _optionsChanged: function(changeRecord) {
+            if (!changeRecord) return;
+
+            if (changeRecord.path === 'options.splices') {
+                changeRecord.value.indexSplices.forEach(function(s) {
+                    s.removed.forEach(function(option) { delete this.spec.encoding[option.prop]; }, this);
+                    for (var i = 0; i < s.addedCount; i++) {
+                        var option = s.object[s.index + i], channel = option.prop;
+                        this.spec.encoding[channel] = this.spec.encoding[channel] || {};
+                        this.set('spec.encoding.' + channel + '.field', option.column);
+                    }
+                }, this);
+
+                return;
+            }
+
+            // Assign fields in spec as indicated by user
+            var match = changeRecord.path.match(/^(options\.#\d)\.column$/);
+            if (match) {
+                var channel = this.get(match[1]).prop, column = this.get(match[0]);
+                this.spec.encoding[channel] = this.spec.encoding[channel] || {};
+                this.set('spec.encoding.' + channel + '.field', column);
             }
         },
 
@@ -312,34 +341,47 @@ Example:
             return type == 'table';
         },
 
-        _hasSize: function(type) {
-            return type == 'circle';
-        },
-
-        _quantitativeFields: function(columns) {
-            return columns.filter(function(column, i) { return this._columnType(this.df.column_types[i]) === 'quantitative'; }, this);
+        _quantitativeField: function(column) {
+            var i = this.df.columns.indexOf(column);
+            return this._columnType(this.df.column_types[i]) === 'quantitative';
         },
 
         _selectDefaults: function(event) {
             var dataframe = event.target,
                 types = dataframe.value.column_types.map(function(datatype) { return this._columnType(datatype); }, this);
 
+            var independentIndex, dependentIndex;
+
+            this.options && this.options.some(function(option, i) {
+                if (option.prop === 'x') {
+                    independentIndex = 'options.' + i + '.index';
+                    return true;
+                }
+            });
+
+            this.options && this.options.some(function(option, i) {
+                if (option.prop === 'y') {
+                    dependentIndex = 'options.' + i + '.index';
+                    return true;
+                }
+            });
+
             // regenerate both dropdown label based on latest listbox items
-            this.independent = null;
-            this.dependent = null;
+            this.set(independentIndex, null);
+            this.set(dependentIndex, null);
 
             this.async(function() {
                 var independent = types.indexOf('temporal');
                 if (independent == -1) independent = types.indexOf('quantitative');
                 if (independent == -1) independent = 0;
                 types[independent] = null;
-                this.independent = independent;
+                this.set(independentIndex, independent);
 
                 var dependent = types.indexOf('quantitative');
                 if (dependent == -1) dependent = 0;
                 if (dependent == independent) dependent++;
                 types[dependent] = null;
-                this.dependent = dependent;
+                this.set(dependentIndex, dependent);
             });
         },
 
@@ -366,6 +408,14 @@ Example:
         },
 
         ready: function() {
+            this._optionsMap = {
+                bar: [this.xOption, this.yOption],
+                area: [this.xOption, this.yOption],
+                line: [this.xOption, this.yOption],
+                circle: [this.xOption, this.yOption, { prop: 'size', label: 'size', filter: '_quantitativeField' }]
+            };
+            this._pickOptions(this.type);
+
             if (this.ref) {
                 // Move template-generated query/dataframe to content
                 //TODO: not ready until template dom-if is complete. Is there a callback for this?
