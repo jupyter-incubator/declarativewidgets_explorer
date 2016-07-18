@@ -1,1 +1,1 @@
-# Vega Polymer widget for the Jupyter notebook
+# Explorer visualization widget for the Jupyter notebook

@@ -19,19 +19,19 @@
 <link rel="import" href="../urth-viz-query/urth-viz-query.html">
 <link rel="import" href="../urth-viz-table/urth-viz-table.html">
 <link rel="import" href="paper-card-collapse.html">
-<link rel="import" href="urth-viz-vega.html" is="urth-core-import">
+<link rel="import" href="urth-viz-vega.html">
 
 <!--
 Represents a widget that lets the user choose between a set of visualizations for a given dataframe.
 
 Example:
 
-    <urth-viz-vega-explorer ref="aDataFrame"></urth-viz-vega-explorer>
+    <urth-viz-explorer ref="aDataFrame"></urth-viz-explorer>
 
 @group Urth Viz
-@element urth-viz-vega-explorer
+@element urth-viz-explorer
 -->
-<dom-module id="urth-viz-vega-explorer">
+<dom-module id="urth-viz-explorer">
     <template>
         <style>
             #viz-explorer-controls {
@@ -173,7 +173,7 @@ Example:
     'use strict';
 
     Polymer({
-        is: 'urth-viz-vega-explorer',
+        is: 'urth-viz-explorer',
 
         properties: {
 
