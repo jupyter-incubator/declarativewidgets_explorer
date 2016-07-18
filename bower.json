@@ -1,8 +1,8 @@
 {
-  "name": "urth-viz-vega",
+  "name": "declarativewidgets-explorer",
   "version": "0.0.1",
-  "description": "Represents a widget that renders a visualization using vega-lite",
-  "main": "urth-viz-vega.html",
+  "description": "Represents a widget that uses visualizations to explore an urth-core-dataframe",
+  "main": "urth-viz-vega-explorer.html",
   "keywords": [
     "urth",
     "visualization",
