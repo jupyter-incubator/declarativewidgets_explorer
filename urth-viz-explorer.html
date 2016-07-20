@@ -132,7 +132,7 @@ Example:
                     <template is="dom-repeat" items="{{options}}" as="option">
                         <paper-dropdown-menu label="{{option.label}}" selected-item-label="{{option.column}}">
                             <paper-listbox class="dropdown-content" selected="{{option.index}}">
-                                <template is="dom-repeat" items="{{df.columns}}" filter="{{option.filter}}">
+                                <template is="dom-repeat" items="{{df.columns}}" filter="{{_filterFieldsByType(option.filter)}}">
                                     <paper-item>{{item}}</paper-item>
                                 </template>
                             </paper-listbox>
@@ -307,8 +307,12 @@ Example:
             var match = changeRecord.path.match(/^(options\.#\d)\.column$/);
             if (match) {
                 var channel = this.get(match[1]).prop, column = this.get(match[0]);
-                this.spec.encoding[channel] = this.spec.encoding[channel] || {};
-                this.set('spec.encoding.' + channel + '.field', column);
+                if (column) {
+                    this.spec.encoding[channel] = this.spec.encoding[channel] || {};
+                    this.set('spec.encoding.' + channel + '.field', column);
+                } else {
+                    this.set('spec.encoding.' + channel, null);
+                }
             }
         },
 
@@ -341,9 +345,11 @@ Example:
             return type == 'table';
         },
 
-        _quantitativeField: function(column) {
-            var i = this.df.columns.indexOf(column);
-            return this._columnType(this.df.column_types[i]) === 'quantitative';
+        _filterFieldsByType: function(type) {
+            return type ? function(column) {
+                var i = this.df.columns.indexOf(column);
+                return this._columnType(this.df.column_types[i]) === type;
+            }.bind(this) : null;
         },
 
         _selectDefaults: function(event) {
@@ -409,11 +415,13 @@ Example:
 
         ready: function() {
             this._optionsMap = {
-                bar: [this.xOption, this.yOption],
-                area: [this.xOption, this.yOption],
-                line: [this.xOption, this.yOption],
-                circle: [this.xOption, this.yOption, { prop: 'size', label: 'size', filter: '_quantitativeField' }]
+                table: [],
+                bar: [this.xOption, this.yOption, { prop: 'color', label: 'color', filter: 'nominal' }],
+                area: [this.xOption, this.yOption, { prop: 'color', label: 'color', filter: 'nominal' }],
+                line: [this.xOption, this.yOption, { prop: 'color', label: 'color', filter: 'nominal' }],
+                circle: [this.xOption, this.yOption, { prop: 'size', label: 'size', filter: 'quantitative' }, { prop: 'color', label: 'color', filter: 'nominal' }]
             };
+
             this._pickOptions(this.type);
 
             if (this.ref) {
