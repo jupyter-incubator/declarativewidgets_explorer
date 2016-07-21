@@ -27,6 +27,8 @@
     "paper-listbox": "PolymerElements/paper-listbox",
     "paper-input": "PolymerElements/paper-input",
     "paper-item": "PolymerElements/paper-item",
+    "paper-menu": "PolymerElements/paper-menu",
+    "paper-menu-button": "PolymerElements/paper-menu-button",
     "paper-toolbar": "PolymerElements/paper-toolbar",
     "vega-embed": "latest",
     "requirejs": "^2.1.0"
