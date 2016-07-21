@@ -38,6 +38,10 @@ Example:
             display: block;
         }
 
+        .filters .query-filter:not(:last-of-type) {
+            margin-bottom: 1em;
+        }
+
         .query-label {
             font-variant: small-caps;
             margin-bottom: 0;
@@ -121,30 +125,32 @@ Example:
 
         <!-- Filters -->
         <h3 class="query-label">Filters (matches all):</h3>
-        <template is="dom-repeat" items="{{filters}}" as="filter">
-            <div class="query-list query-filter">
-                <paper-dropdown-menu label="column" selected-item-label="{{filter.col}}">
-                    <paper-listbox class="dropdown-content">
-                        <template is="dom-repeat" items="{{originalColumns}}">
-                            <paper-item>{{item}}</paper-item>
-                        </template>
-                    </paper-listbox>
-                </paper-dropdown-menu>
-                <paper-dropdown-menu label="comparator">
-                    <paper-listbox class="dropdown-content" selected="{{filter.op}}" attr-for-selected="value">
-                        <template is="dom-repeat" items="{{filterOpSet(filter.col)}}">
-                            <paper-item value="{{item.op}}">{{item.desc}}</paper-item>
-                        </template>
-                    </paper-listbox>
-                </paper-dropdown-menu>
-                <div class="delete-row">
-                    <paper-input label="value" value="{{filter.val}}"></paper-input>
-                    <paper-button class="delete-btn" on-tap="deleteFilter">
-                        <iron-icon icon="icons:delete"></iron-icon>
-                    </paper-button>
+        <div class="filters">
+            <template is="dom-repeat" items="{{filters}}" as="filter">
+                <div class="query-list query-filter">
+                    <paper-dropdown-menu label="column" selected-item-label="{{filter.col}}">
+                        <paper-listbox class="dropdown-content">
+                            <template is="dom-repeat" items="{{originalColumns}}">
+                                <paper-item>{{item}}</paper-item>
+                            </template>
+                        </paper-listbox>
+                    </paper-dropdown-menu>
+                    <paper-dropdown-menu label="comparator">
+                        <paper-listbox class="dropdown-content" selected="{{filter.op}}" attr-for-selected="value">
+                            <template is="dom-repeat" items="{{filterOpSet(filter.col)}}">
+                                <paper-item value="{{item.op}}">{{item.desc}}</paper-item>
+                            </template>
+                        </paper-listbox>
+                    </paper-dropdown-menu>
+                    <div class="delete-row">
+                        <paper-input label="value" value="{{filter.val}}"></paper-input>
+                        <paper-button class="delete-btn" on-tap="deleteFilter">
+                            <iron-icon icon="icons:delete"></iron-icon>
+                        </paper-button>
+                    </div>
                 </div>
-            </div>
-        </template>
+            </template>
+        </div>
         <paper-button class="add-filter" on-tap="addFilter">
             <iron-icon icon="icons:add"></iron-icon>
             Add filter
