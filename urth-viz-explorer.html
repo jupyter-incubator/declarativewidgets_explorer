@@ -263,7 +263,7 @@ Example:
         _specChanged: function(changeRecord) {
             var channelMatch = changeRecord.path.match(/^spec.encoding.([^.]+).field$/)
             if (channelMatch) {
-                var type = this._columnType(this.df.column_types[this.df.columns.indexOf(changeRecord.value)]),
+                var type = this._columnType(this.df.columnTypes[this.df.columns.indexOf(changeRecord.value)]),
                     channel = this.spec.encoding[channelMatch[1]];
                 channel.type = type;
                 if (type === 'temporal') {
@@ -329,13 +329,15 @@ Example:
         },
 
         _columnType: function(datatype) {
-            var type = 'nominal';
+            var type;
 
-            //TODO: Need to settle on normalized set of data types, see #426
-            if (/^[Dd]ate/.test(datatype)) {
-                type = 'temporal';
-            } else if (/^(?:float|int)/.test(datatype)) {
-                type = 'quantitative';
+            switch (datatype) {
+            case 'Date':
+                type = 'temporal'; break;
+            case 'Number':
+                type = 'quantitative'; break;
+            default:
+                type = 'nominal';
             }
 
             return type;
@@ -348,13 +350,13 @@ Example:
         _filterFieldsByType: function(type) {
             return type ? function(column) {
                 var i = this.df.columns.indexOf(column);
-                return this._columnType(this.df.column_types[i]) === type;
+                return this._columnType(this.df.columnTypes[i]) === type;
             }.bind(this) : null;
         },
 
         _selectDefaults: function(event) {
             var dataframe = event.target,
-                types = dataframe.value.column_types.map(function(datatype) { return this._columnType(datatype); }, this);
+                types = dataframe.value.columnTypes.map(function(datatype) { return this._columnType(datatype); }, this);
 
             var independentIndex, dependentIndex;
 
