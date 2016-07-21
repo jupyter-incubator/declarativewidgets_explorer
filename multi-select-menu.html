@@ -64,7 +64,7 @@ Collapsing will hide the content but keep the header
                 </paper-input>
             </div>
             <div class="dropdown-content">
-                <paper-input id="filter" label="Filter" value="{{filter}}" tabindex="0"></paper-input>
+                <paper-input id="filter" label="Filter the [[itemType]]" value="{{filter}}" tabindex="0"></paper-input>
                 <paper-menu
                     id="items"
                     multi
@@ -103,6 +103,11 @@ Collapsing will hide the content but keep the header
                     value: '',
                     notify: true
                 },
+                // items filtered by the filter property
+                filteredItems: {
+                    type: Array,
+                    computed: '_computeFilteredItems(filter, items)'
+                },
                 // input label
                 label: {
                     type: String,
@@ -136,6 +141,17 @@ Collapsing will hide the content but keep the header
                     this.filter = '';
                 }.bind(this), 250);
             },
+            _computeFilteredItems: function(filter, items) {
+                if (filter) {
+                    // non-adjacent regex
+                    var regex = new RegExp('.*' + filter.split('').join('.*') + '.*');
+                    return items.filter(function(item) {
+                        return regex.test(item);
+                    });
+                } else {
+                    return items;
+                }
+            },
             _deselect: function(event) {
                 console.log('deselect');
             },
@@ -144,10 +160,6 @@ Collapsing will hide the content but keep the header
                 window.setTimeout(function() {
                     this.$.filter.focus();
                 }.bind(this), 250);
-            },
-            _getFilterRegex: function() {
-                // returns non-consecutive regex
-                return new RegExp('.*' + this.filter.split('').join('.*') + '.*');
             },
             _updateSelectedItems: function() {
                 // get selected items based on menu item selections
@@ -171,19 +183,6 @@ Collapsing will hide the content but keep the header
 
                 // set CSV value
                 this._setCsv(this.selectedItems.join(','));
-            },
-            ready: function() {
-                this.filteredItems = this.items;
-                this.addEventListener('filter-changed', function(event) {
-                    if (this.filter) {
-                        var regex = this._getFilterRegex();
-                        this.filteredItems = this.items.filter(function(item) {
-                            return regex.test(item);
-                        });
-                    } else {
-                        this.filteredItems = this.items;
-                    }
-                });
             }
         });
     })();
