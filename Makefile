@@ -2,7 +2,7 @@ ROOT_REPO:=jupyter/all-spark-notebook:258e25c03cba
 REPO:=lbustelo/tle-notebook:258e25c03cba
 
 define INSTALL_DECLWID_CMD
-pip install --no-binary ::all: jupyter_declarativewidgets && \
+pip install --no-binary ::all: $$(ls -1 /srv/*.tar.gz | tail -n 1) && \
 jupyter declarativewidgets install --user && \
 jupyter declarativewidgets activate
 endef
@@ -16,6 +16,7 @@ endef
 init:
 	@-docker $(DOCKER_OPTS) rm -f tle-build
 	@docker $(DOCKER_OPTS) run -it --user root --name tle-build \
+			-v `pwd`:/srv \
 		$(ROOT_REPO) bash -c 'apt-get -qq update && \
 		apt-get -qq install --yes curl && \
 		curl --silent --location https://deb.nodesource.com/setup_0.12 | sudo bash - && \

@@ -12,4 +12,8 @@ See `urth-viz-explorer.ipynb` for examples.
 
 ## Installation
 
+Copy a tarball of the declarativewidgets project, version 0.7.0 or later, into the top-level directory of this project, then:
+
 `make init; make run`
+
+Jupyter will be running on port 9999.
