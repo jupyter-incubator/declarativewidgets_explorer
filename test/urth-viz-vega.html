@@ -1,0 +1,104 @@
+<!doctype html>
+<!--
+# Copyright (c) Jupyter Development Team.
+# Distributed under the terms of the Modified BSD License.
+-->
+<html>
+<head>
+    <meta charset="utf-8">
+    <!-- STEP 1: Provide a title for the test suite. -->
+    <title>urth-viz-vega tests</title>
+    <meta name='viewport' content='width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes'>
+
+    <!-- Need the web component polyfill for browsers without native support. -->
+    <script src='../../webcomponentsjs/webcomponents-lite.js'></script>
+
+    <!-- Load test framework and helpers. -->
+    <script src='../../web-component-tester/browser.js'></script>
+    <script src='../../test-fixture/test-fixture-mocha.js'></script>
+    <link rel='import' href='../../test-fixture/test-fixture.html'>
+
+    <!-- STEP 2: Import the element to test. -->
+    <link rel='import' href='../urth-viz-vega.html'>
+</head>
+
+<body>
+    <!-- STEP 3: Setup document with DOM to test. Use test-fixture elements
+         to ease setup and cleanup of elements. -->
+    <test-fixture id="basic">
+        <template>
+            <urth-viz-vega mode='vega-lite' spec='{
+      "description": "The Trellis display by Becker et al. helped establish small multiples as a “powerful mechanism for understanding interactions in studies of how a response depends on explanatory variables”. Here we reproduce a trellis of Barley yields from the 1930s, complete with main-effects ordering to facilitate comparison.",
+      "data": {"url": "data/barley.json"},
+      "mark": "point",
+      "encoding": {
+        "row": {"field": "site", "type": "ordinal"},
+        "x": {"aggregate": "mean", "field": "yield", "type": "quantitative"},
+        "y": {
+          "field": "variety", "type": "ordinal",
+          "sort": {"field": "yield","op": "mean"},
+          "scale": {"bandSize": 12}
+        },
+        "color": {"field": "year", "type": "nominal"}
+      }
+            }'></urth-viz-vega>
+        </template>
+    </test-fixture>
+
+    <script>
+    // STEP 4: Define any globals needed by the test suite.
+
+    // STEP 5: Define suite(s) and tests.
+    describe('urth-viz-vega', function() {
+        var fElmt;
+        beforeEach(function(done) {
+            function listener() {
+                fElmt.removeEventListener('urth-viz-render', listener);
+                done();
+            }
+
+            fElmt = fixture('basic');
+            fElmt.addEventListener('urth-viz-render', listener);
+        });
+
+        it('should render a visual', function(done) {
+            try {
+                expect(fElmt.querySelectorAll('.vega svg')).to.have.length.above(0);
+                done();
+            } catch( e ) {
+                done( e );
+            }
+        });
+
+/*
+        describe('_isHeightSet', function() {
+            it('should return true if height is 0', function() {
+                var settings = fElmt.hot.getSettings();
+                var stub = sinon.stub(fElmt.hot, 'getSettings', function() {
+                    settings.height = 0;
+                    return settings;
+                });
+
+                var isSet = fElmt._isHeightSet();
+                stub.restore();
+                expect(isSet).to.be.true;
+            });
+
+            it('should return true if height is 10', function() {
+                var settings = fElmt.hot.getSettings();
+                var stub = sinon.stub(fElmt.hot, 'getSettings', function() {
+                    settings.height = 10;
+                    return settings;
+                });
+
+                var isSet = fElmt._isHeightSet();
+                stub.restore();
+                expect(isSet).to.be.true;
+            });
+        });
+*/
+    });
+
+    </script>
+</body>
+</html>
