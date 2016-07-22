@@ -1,0 +1,460 @@
+<!--
+# Copyright (c) Jupyter Development Team.
+# Distributed under the terms of the Modified BSD License.
+-->
+<link rel="import" href="../polymer/polymer.html">
+
+<link rel="import" href="../urth-core-behaviors/error-display-behavior.html">
+<!-- <link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html"> -->
+<link rel="import" href="../urth-viz-behaviors/urth-viz-selection-behavior.html">
+
+<link rel="import" href="../iron-collapse/iron-collapse.html">
+<link rel="import" href="../paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-input/paper-input.html">
+<link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-listbox/paper-listbox.html">
+
+<link rel="import" href="../urth-core-dataframe/urth-core-dataframe.html">
+<link rel="import" href="../urth-viz-table/urth-viz-table.html">
+<link rel="import" href="urth-viz-query.html">
+<link rel="import" href="urth-viz-vega.html">
+<link rel="import" href="paper-card-collapse.html">
+
+<!--
+Represents a widget that lets the user choose between a set of visualizations for a given dataframe.
+
+Example:
+
+    <urth-viz-explorer ref="aDataFrame"></urth-viz-explorer>
+
+@group Urth Viz
+@element urth-viz-explorer
+-->
+<dom-module id="urth-viz-explorer">
+    <template>
+        <style>
+            #viz-explorer-controls {
+                box-sizing: border-box;
+                padding-right: 1em;
+            }
+
+            #viz-explorer-viz {
+                -webkit-flex-grow: 1;
+                flex-grow: 1;
+            }
+
+            #controls-collapse-btn {
+                padding-left: 0px;
+                padding-right: 0px;
+                width: 24px;
+                transition: transform 0.5s;
+            }
+
+            .viz-explorer-controls-section {
+                width: 100%;
+                margin-bottom: 1em;
+            }
+
+            paper-dropdown-menu,
+            paper-input {
+                display: block;
+                width: 200px;
+            }
+
+            paper-card-collapse {
+                display: block;
+            }
+
+            :host {
+                display: -ms-flexbox;
+                display: -webkit-flex;
+                display: flex;
+                -ms-flex-direction: row;
+                -webkit-flex-direction: row;
+                flex-direction: row;
+
+                --paper-item-min-height: 24px;
+                --paper-item: {
+                    font-size: 14px;
+                };
+                --paper-input-container: {
+                    padding: 4px 0;
+                };
+                --paper-input-container-input: {
+                    font-size: 14px;
+                };
+                --paper-input-container-label: {
+                    font-size: 14px;
+                };
+                --paper-input-container-label-floating: {
+                    font-size: 16px;
+                };
+            }
+        </style>
+
+        <!-- create dataframe if set as "ref" attribute -->
+        <template is="dom-if" if="{{ref}}">
+            <urth-viz-query>
+                <urth-core-dataframe
+                    ref$="{{ref}}"
+                    value="{{df}}"
+                    limit="{{limit}}"
+                    row-as-object="true"
+                    on-rows-changed="_rowsChanged"
+                    on-columns-changed="_selectDefaults">
+                </urth-core-dataframe>
+            </urth-viz-query>
+        </template>
+
+        <!-- Button to collapse contols -->
+        <paper-icon-button id="controls-collapse-btn" icon="chevron-left" on-tap="_toggleCollapse" noink="true"></paper-icon-button>
+
+        <!-- controls section -->
+        <iron-collapse id="viz-explorer-controls" horizontal="true" opened="true">
+            <!-- select viz type -->
+            <paper-card-collapse class="viz-explorer-controls-section" heading="Viz">
+                <paper-dropdown-menu label="Viz type">
+                    <paper-listbox class="dropdown-content" attr-for-selected="name" selected="{{type}}">
+                        <paper-item name="table">Table</paper-item>
+                        <paper-item name="bar">Bar Chart</paper-item>
+                        <paper-item name="area">Area Chart</paper-item>
+                        <paper-item name="line">Line Chart</paper-item>
+                        <paper-item name="circle">Scatter Chart</paper-item>
+                    </paper-listbox>
+                </paper-dropdown-menu>
+                <paper-input label="Limit" value="{{limit}}"></paper-input>
+            </paper-card-collapse>
+
+            <!-- select viz properties -->
+            <template is="dom-if" if="{{!showAsTable}}">
+                <paper-card-collapse class="viz-explorer-controls-section" heading="Viz Options">
+                    <template is="dom-repeat" items="{{options}}" as="option">
+                        <paper-dropdown-menu label="{{option.label}}" selected-item-label="{{option.column}}">
+                            <paper-listbox class="dropdown-content" selected="{{option.index}}">
+                                <template is="dom-repeat" items="{{df.columns}}" filter="{{_filterFieldsByType(option.filter)}}">
+                                    <paper-item>{{item}}</paper-item>
+                                </template>
+                            </paper-listbox>
+                        </paper-dropdown-menu>
+                    </template>
+                </paper-card-collapse>
+            </template>
+
+            <!-- dataframe query -->
+            <paper-card-collapse class="viz-explorer-controls-section" heading="Query">
+                <content id="viz-query" select="urth-viz-query"></content>
+            </paper-card-collapse>
+        </iron-collapse>
+
+        <!-- viz section -->
+        <div id="viz-explorer-viz">
+            <!-- table view -->
+            <template is="dom-if" if="{{showAsTable}}">
+                <urth-viz-table datarows="{{df.data}}" columns="{{df.columns}}"></urth-viz-table>
+            </template>
+
+            <!-- viz view -->
+            <template is="dom-if" if="{{!showAsTable}}">
+                <urth-viz-vega
+                    mode="vega-lite"
+                    spec="{{spec}}"
+                    selection-index="{{selectionIndex}}"
+                    on-selection-info-changed="_selectionInfoChanged">
+                </urth-viz-vega>
+            </template>
+        </div>
+
+        <content></content>
+    </template>
+</dom-module>
+<script>
+
+    'use strict';
+
+    Polymer({
+        is: 'urth-viz-explorer',
+
+        properties: {
+
+            ref: String,
+
+            /**
+             * The `urth-viz-chart` chart type to render.
+             */
+            type: {
+                type: String,
+                value: 'bar',
+                observer: '_typeChanged'
+            },
+
+            showAsTable: {
+                type: Boolean,
+                computed: '_showAsTable(type)'
+            },
+
+            limit: {
+                type: Number,
+                notify: true,
+                value: 20
+            },
+
+            /**
+             * Allows user to select multiple chart components (bars in barchart, slices in pie chart, etc).
+            multiSelect: {
+                type: Boolean,
+                value: false,
+                reflectToAttribute: true
+            },
+             */
+
+            options: {
+                type: Array
+            },
+
+            xOption: {
+                type: Object,
+                value: function() { return { prop: 'x', label: 'x axis' }; }
+            },
+
+            yOption: {
+                type: Object,
+                value: function() { return { prop: 'y', label: 'y axis' }; }
+            },
+
+            spec: {
+                type: Object,
+                value: function() {
+                    return {
+                        description: "A simple chart with embedded data.",
+                        mark: "bar",
+                        data: { values: []},
+                        encoding: {}
+                    };
+                }
+            }
+        },
+
+        observers: [
+            '_specChanged(spec.encoding.*)',
+            '_pickOptions(type)',
+            '_optionsChanged(options.*)'
+        ],
+
+        behaviors: [
+//            Polymer.IronResizableBehavior,
+            Urth.DisplayErrorBehavior,
+            Urth.VizSelectionBehavior
+        ],
+
+        _typeChanged: function(newType) {
+            if (newType != 'table') {
+                this.set('spec.mark', newType);
+            }
+        },
+
+        _selectionIndexChanged: function() {
+            var obj = this.selectionAsObject ? this.spec && this.spec.data.values : this.df && this.df.data;
+            if (obj) {
+                this._setSelection(obj[this.selectionIndex]); //TODO: multi
+            }
+        },
+
+        _specChanged: function(changeRecord) {
+            var channelMatch = changeRecord.path.match(/^spec.encoding.([^.]+).field$/)
+            if (channelMatch) {
+                var type = this._columnType(this.df.columnTypes[this.df.columns.indexOf(changeRecord.value)]),
+                    channel = this.spec.encoding[channelMatch[1]];
+                channel.type = type;
+                if (type === 'temporal') {
+                    channel.timeUnit = this._computeUnit(channel.field, false);
+                    channel.axis = { shortTimeLabels: true};
+                } else {
+                    delete channel.timeUnit;
+                    if (this.spec.axis) delete this.spec.axis.shortTimeLabels;
+                }
+            }
+        },
+
+        _pickOptions: function(newType) {
+            // clear out any fields in the spec from previous type
+            this.set('spec.encoding', {});
+            this.set('options', []);
+
+            // rebuild options and corresponding spec
+            if (this._optionsMap) {
+                this._optionsMap[newType].forEach(function(option) { this.push('options', option); }, this);
+            }
+        },
+
+        _optionsChanged: function(changeRecord) {
+            if (!changeRecord) return;
+
+            if (changeRecord.path === 'options.splices') {
+                changeRecord.value.indexSplices.forEach(function(s) {
+                    s.removed.forEach(function(option) { delete this.spec.encoding[option.prop]; }, this);
+                    for (var i = 0; i < s.addedCount; i++) {
+                        var option = s.object[s.index + i], channel = option.prop;
+                        this.spec.encoding[channel] = this.spec.encoding[channel] || {};
+                        this.set('spec.encoding.' + channel + '.field', option.column);
+                    }
+                }, this);
+
+                return;
+            }
+
+            // Assign fields in spec as indicated by user
+            var match = changeRecord.path.match(/^(options\.#\d)\.column$/);
+            if (match) {
+                var channel = this.get(match[1]).prop, column = this.get(match[0]);
+                if (column) {
+                    this.spec.encoding[channel] = this.spec.encoding[channel] || {};
+                    this.set('spec.encoding.' + channel + '.field', column);
+                } else {
+                    this.set('spec.encoding.' + channel, null);
+                }
+            }
+        },
+
+        _computeUnit: function(field, periodic) {
+            var dates = this.spec.data.values.map(function(row) { return row[field]; });
+            var diff = (new Date(Math.max.apply(null, dates)) - new Date(Math.min.apply(null, dates))) / 1000;
+            var unit = 'year';
+
+            if (diff < 60 * 60 * 24) unit = periodic ? 'hours' : 'yearmonthdatehoursminutes';
+            else if (diff < 60 * 60 * 24 * 30) unit = periodic ? 'day' : 'yearmonthdatehours';
+            else if (diff < 60 * 60 * 24 * 30 * 12) unit = periodic ? 'month' : 'yearmonthdate';
+
+            return unit;
+        },
+
+        _columnType: function(datatype) {
+            var type;
+
+            switch (datatype) {
+            case 'Date':
+                type = 'temporal'; break;
+            case 'Number':
+                type = 'quantitative'; break;
+            default:
+                type = 'nominal';
+            }
+
+            return type;
+        },
+
+        _showAsTable: function(type) {
+            return type == 'table';
+        },
+
+        _filterFieldsByType: function(type) {
+            return type ? function(column) {
+                var i = this.df.columns.indexOf(column);
+                return this._columnType(this.df.columnTypes[i]) === type;
+            }.bind(this) : null;
+        },
+
+        _selectDefaults: function(event) {
+            var dataframe = event.target,
+                types = dataframe.value.columnTypes.map(function(datatype) { return this._columnType(datatype); }, this);
+
+            var independentIndex, dependentIndex;
+
+            this.options && this.options.some(function(option, i) {
+                if (option.prop === 'x') {
+                    independentIndex = 'options.' + i + '.index';
+                    return true;
+                }
+            });
+
+            this.options && this.options.some(function(option, i) {
+                if (option.prop === 'y') {
+                    dependentIndex = 'options.' + i + '.index';
+                    return true;
+                }
+            });
+
+            // regenerate both dropdown label based on latest listbox items
+            this.set(independentIndex, null);
+            this.set(dependentIndex, null);
+
+            this.async(function() {
+                var independent = types.indexOf('temporal');
+                if (independent == -1) independent = types.indexOf('quantitative');
+                if (independent == -1) independent = 0;
+                types[independent] = null;
+                this.set(independentIndex, independent);
+
+                var dependent = types.indexOf('quantitative');
+                if (dependent == -1) dependent = 0;
+                if (dependent == independent) dependent++;
+                types[dependent] = null;
+                this.set(dependentIndex, dependent);
+            });
+        },
+
+        _rowsChanged: function(event) {
+            var values = event.detail.value;
+
+            // tag each element with an index so we can map back to the row from the chart
+            values.forEach(function(value, i) {
+                value._index = i;
+            });
+
+            this.set('spec.data', { values: values });
+        },
+
+        _selectionInfoChanged: function(event) {
+            this._setSelectionInfo(event.detail.value);
+        },
+
+        _toggleCollapse: function() {
+            this.$['viz-explorer-controls'].toggle();
+            var collapseBtn = this.$['controls-collapse-btn'];
+            var transform = collapseBtn.style.transform;
+            collapseBtn.style.transform = transform === 'rotateY(180deg)' ? 'rotateY(0deg)' : 'rotateY(180deg)';
+        },
+
+        ready: function() {
+            this._optionsMap = {
+                table: [],
+                bar: [this.xOption, this.yOption, { prop: 'color', label: 'color', filter: 'nominal' }],
+                area: [this.xOption, this.yOption, { prop: 'color', label: 'color', filter: 'nominal' }],
+                line: [this.xOption, this.yOption, { prop: 'color', label: 'color', filter: 'nominal' }],
+                circle: [this.xOption, this.yOption, { prop: 'size', label: 'size', filter: 'quantitative' }, { prop: 'color', label: 'color', filter: 'nominal' }]
+            };
+
+            this._pickOptions(this.type);
+
+            if (this.ref) {
+                // Move template-generated query/dataframe to content
+                //TODO: not ready until template dom-if is complete. Is there a callback for this?
+                this.async(function() { this.$['viz-query'].appendChild(this.$$('urth-viz-query')); }, 1000);
+            } else {
+                // If no dataframe instance is specified with `ref`, look instead for a child dataframe
+                // and  bind that value to df whenever it changes,
+                var dataframe = this.querySelector('urth-core-dataframe');
+
+                // manually bind values to 'df' property if using child
+                if (dataframe) {
+                    this.df = dataframe.value;
+                    dataframe.rowAsObject = true;
+                    dataframe.limit = this.limit;
+                    this.addEventListener('limit-changed', function(event) {
+                        dataframe.limit = event.detail.value;
+                    }.bind(this));
+                    dataframe.addEventListener('value-changed', function(event) {
+                        this.df = event.detail.value;
+                    }.bind(this));
+                    dataframe.addEventListener('columns-changed', function (event) {
+                        this.async(this._selectDefaults.bind(this, event));
+                    }.bind(this));
+                    dataframe.addEventListener('rows-changed', function(event) {
+                        this.async(this._rowsChanged.bind(this, event));
+                    }.bind(this));
+                }
+            }
+        }
+    });
+
+ </script>
