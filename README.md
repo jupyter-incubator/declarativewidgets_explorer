@@ -16,4 +16,4 @@ Copy a tarball of the declarativewidgets project, version 0.7.0 or later, into t
 
 `make init; make run`
 
-Jupyter will be running on port 9999.
+Jupyter will be running on port 8888.
