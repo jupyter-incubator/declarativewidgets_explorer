@@ -39,12 +39,11 @@ Example:
             width: 260px;
         }
 
-        .query-list > * {
-            display: block;
-        }
-
-        .filters .query-filter:not(:last-of-type) {
+        .query-list-item:not(:last-of-type) {
             margin-bottom: 1em;
+        }
+        .query-list-item > * {
+            display: block;
         }
 
         .query-label {
@@ -95,29 +94,31 @@ Example:
 
                 <!-- aggregators -->
                 <h3 class="query-label">Aggregation functions:</h3>
-                <template is="dom-repeat" items="{{group.aggregators}}" as="agg">
-                    <div class="query-list">
-                        <paper-dropdown-menu class="agg-op" label="operation" selected-item-label="{{agg.op}}">
-                            <paper-listbox class="dropdown-content">
-                                <paper-item>sum</paper-item>
-                                <paper-item>mean</paper-item>
-                            </paper-listbox>
-                        </paper-dropdown-menu>
-                        <div class="delete-row">
-                            <paper-dropdown-menu class="agg-col" label="column" selected-item-label="{{agg.col}}">
+                <div class="query-list">
+                    <template is="dom-repeat" items="{{group.aggregators}}" as="agg">
+                        <div class="query-list-item query-agg">
+                            <paper-dropdown-menu class="agg-op" label="operation" selected-item-label="{{agg.op}}">
                                 <paper-listbox class="dropdown-content">
-                                    <template is="dom-repeat" items="{{originalColumns}}">
-                                        <paper-item>{{item}}</paper-item>
-                                    </template>
+                                    <paper-item>sum</paper-item>
+                                    <paper-item>mean</paper-item>
                                 </paper-listbox>
                             </paper-dropdown-menu>
+                            <div class="delete-row">
+                                <paper-dropdown-menu class="agg-col" label="column" selected-item-label="{{agg.col}}">
+                                    <paper-listbox class="dropdown-content">
+                                        <template is="dom-repeat" items="{{originalColumns}}">
+                                            <paper-item>{{item}}</paper-item>
+                                        </template>
+                                    </paper-listbox>
+                                </paper-dropdown-menu>
 
-                            <paper-button on-tap="deleteAgg">
-                                <iron-icon icon="icons:delete"></iron-icon>
-                            </paper-button>
+                                <paper-button on-tap="deleteAgg">
+                                    <iron-icon icon="icons:delete"></iron-icon>
+                                </paper-button>
+                            </div>
                         </div>
-                    </div>
-                </template>
+                    </template>
+                </div>
 
                 <paper-button class="add-agg" on-tap="addAgg">
                     <iron-icon icon="icons:add"></iron-icon>
@@ -128,9 +129,9 @@ Example:
 
         <!-- Filters -->
         <h3 class="query-label">Filters (matches all):</h3>
-        <div class="filters">
+        <div class="query-list">
             <template is="dom-repeat" items="{{filters}}" as="filter">
-                <div class="query-list query-filter">
+                <div class="query-list-item query-filter">
                     <paper-dropdown-menu label="column" selected-item-label="{{filter.col}}">
                         <paper-listbox class="dropdown-content">
                             <template is="dom-repeat" items="{{originalColumns}}">
