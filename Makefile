@@ -1,5 +1,6 @@
 ROOT_REPO:=jupyter/all-spark-notebook:258e25c03cba
-REPO:=lbustelo/tle-notebook:258e25c03cba
+CONTAINER_NAME:=declarativewidgets-explorer
+REPO:=jupyter/declarativewidgets-explorer:258e25c03cba
 
 define INSTALL_DECLWID_CMD
 pip install --no-binary ::all: $$(ls -1 /srv/*.tar.gz | tail -n 1) && \
@@ -14,8 +15,8 @@ jupyter dashboards activate
 endef
 
 init:
-	@-docker $(DOCKER_OPTS) rm -f tle-build
-	@docker $(DOCKER_OPTS) run -it --user root --name tle-build \
+	@-docker $(DOCKER_OPTS) rm -f $(CONTAINER_NAME)
+	@docker $(DOCKER_OPTS) run -it --user root --name $(CONTAINER_NAME) \
 			-v `pwd`:/srv \
 		$(ROOT_REPO) bash -c 'apt-get -qq update && \
 		apt-get -qq install --yes curl && \
@@ -25,10 +26,10 @@ init:
 		npm install -g bower && \
 		$(INSTALL_DECLWID_CMD) && \
 		$(INSTALL_DASHBOARD_CMD)'
-	@docker $(DOCKER_OPTS) commit tle-build $(REPO)
-	@-docker $(DOCKER_OPTS) rm -f tle-build
+	@docker $(DOCKER_OPTS) commit $(CONTAINER_NAME) $(REPO)
+	@-docker $(DOCKER_OPTS) rm -f $(CONTAINER_NAME)
 
-run: PORT_MAP?=-p 9999:8888
+run: PORT_MAP?=-p 8888:8888
 run: CMD?=jupyter notebook --no-browser --port 8888 --ip="*"
 run:
 		@docker $(DOCKER_OPTS) run --user root $(OPTIONS) \
@@ -37,4 +38,5 @@ run:
 			-v `pwd`:/srv \
 			--workdir '/srv/notebooks' \
 			--user root \
+			--name $(CONTAINER_NAME) \
 			$(REPO) bash -c '$(CMD)'
