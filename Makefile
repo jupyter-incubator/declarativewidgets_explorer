@@ -42,12 +42,14 @@ run:
 		$(PORT_MAP) \
 		-e USE_HTTP=1 \
 		-v `pwd`:/srv \
-		-v `pwd`:/root/.local/share/jupyter/nbextensions/declarativewidgets/urth_components/declarativewidgets-explorer \
+		-v `pwd`/elements:/root/.local/share/jupyter/nbextensions/declarativewidgets/urth_components/declarativewidgets-explorer \
 		--workdir '/srv/notebooks' \
 		--user root \
 		$(REPO) bash -c '$(CMD)'
 
 test: bower_components
+	@bower install ../declarativewidgets/elements/urth-core-behaviors/
+	@bower install ../declarativewidgets/elements/urth-viz-behaviors/
 	@npm test
 
 clean:

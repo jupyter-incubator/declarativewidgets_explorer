@@ -38,7 +38,7 @@ module.exports = {
   },
   webserver: {
     pathMappings: [
-                   /*      {'/elements': 'bower_components'}*/
+      {'/': 'bower_components'}
     ],
     urlPrefix: ''
   }
