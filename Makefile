@@ -32,11 +32,11 @@ init:
 run: PORT_MAP?=-p 8888:8888
 run: CMD?=jupyter notebook --no-browser --port 8888 --ip="*"
 run:
-		@docker $(DOCKER_OPTS) run --user root $(OPTIONS) \
-			$(PORT_MAP) \
-			-e USE_HTTP=1 \
-			-v `pwd`:/srv \
-			--workdir '/srv/notebooks' \
-			--user root \
-			--name $(CONTAINER_NAME) \
-			$(REPO) bash -c '$(CMD)'
+	@docker $(DOCKER_OPTS) run --user root $(OPTIONS) \
+		$(PORT_MAP) \
+		-e USE_HTTP=1 \
+		-v `pwd`:/srv \
+		-v `pwd`:/root/.local/share/jupyter/nbextensions/declarativewidgets/urth_components/declarativewidgets-explorer \
+		--workdir '/srv/notebooks' \
+		--user root \
+		$(REPO) bash -c '$(CMD)'
