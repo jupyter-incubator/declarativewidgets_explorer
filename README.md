@@ -8,6 +8,8 @@ or using the [`<urth-core-dataframe>`](http://jupyter-incubator.github.io/declar
 as a child element, wrapped in an `<urth-viz-query>` element to provide the ability to do interactive queries of the data set
 on the kernel.
 
+![Explorer example](explorer_snapshot.png)
+
 See `urth-viz-explorer.ipynb` for examples.
 
 ## Installation
