@@ -14,7 +14,7 @@ jupyter dashboards install --user && \
 jupyter dashboards activate
 endef
 
-init:
+init: node_modules
 	@-docker $(DOCKER_OPTS) rm -f $(CONTAINER_NAME)
 	@docker $(DOCKER_OPTS) run -it --user root --name $(CONTAINER_NAME) \
 			-v `pwd`:/srv \
@@ -29,6 +29,12 @@ init:
 	@docker $(DOCKER_OPTS) commit $(CONTAINER_NAME) $(REPO)
 	@-docker $(DOCKER_OPTS) rm -f $(CONTAINER_NAME)
 
+node_modules: package.json
+	@npm install --quiet
+
+bower_components: node_modules bower.json
+	@npm run bower -- install $(BOWER_OPTS)
+
 run: PORT_MAP?=-p 8888:8888
 run: CMD?=jupyter notebook --no-browser --port 8888 --ip="*"
 run:
@@ -36,7 +42,15 @@ run:
 		$(PORT_MAP) \
 		-e USE_HTTP=1 \
 		-v `pwd`:/srv \
-		-v `pwd`:/root/.local/share/jupyter/nbextensions/declarativewidgets/urth_components/declarativewidgets-explorer \
+		-v `pwd`/elements:/root/.local/share/jupyter/nbextensions/declarativewidgets/urth_components/declarativewidgets-explorer \
 		--workdir '/srv/notebooks' \
 		--user root \
 		$(REPO) bash -c '$(CMD)'
+
+test: bower_components
+	@bower install ../declarativewidgets/elements/urth-core-behaviors/
+	@bower install ../declarativewidgets/elements/urth-viz-behaviors/
+	@npm test
+
+clean:
+	@-rm -rf bower_components node_modules

@@ -1,0 +1,29 @@
+{
+  "name": "declarativewidgets-explorer",
+  "version": "0.1.0",
+  "description": "Explorer visualization widget for the Jupyter Notebook",
+  "devDependencies": {
+    "bower": "^1.7.1",
+    "selenium-standalone": "latest",
+    "web-component-tester": "^4",
+    "wct-local": "2.0.3"
+  },
+  "config": {},
+  "scripts": {
+    "bower": "bower",
+    "test": "wct test/*",
+    "test-sauce": "wct --skip-plugin local --plugin sauce test/*"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jupyter-incubator/declarativewidgets_explorer.git"
+  },
+  "keywords": [
+    "ipython",
+    "jupyter",
+    "declarativewidgets",
+    "explorer",
+    "urth"
+  ],
+  "author": "Jupyter Community"
+}

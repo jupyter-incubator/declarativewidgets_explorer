@@ -17,3 +17,5 @@ Copy a tarball of the declarativewidgets project, version 0.7.0 or later, into t
 `make init; make run`
 
 Jupyter will be running on port 8888.
+
+`make tests` assumes that declarativewidgets is installed as a sibling directory to this project
