@@ -42,12 +42,17 @@ Example:
             #viz-explorer-viz {
                 -webkit-flex-grow: 1;
                 flex-grow: 1;
+                overflow-x: auto;
             }
 
             #controls-collapse-btn {
                 padding-left: 0px;
                 padding-right: 0px;
-                width: 24px;
+
+                /* force width to stay the same in flex layout */
+                min-width: 24px;
+                max-width: 24px;
+                
                 transition: transform 0.5s;
             }
 
