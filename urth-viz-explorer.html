@@ -157,7 +157,11 @@ Example:
         <div id="viz-explorer-viz">
             <!-- table view -->
             <template is="dom-if" if="{{showAsTable}}">
-                <urth-viz-table datarows="{{df.data}}" columns="{{df.columns}}"></urth-viz-table>
+                <urth-viz-table
+                    datarows="{{df.data}}"
+                    columns="{{df.columns}}"
+                    on-selection-changed="_selectionChanged">
+                </urth-viz-table>
             </template>
 
             <!-- viz view -->
@@ -437,6 +441,10 @@ Example:
             });
 
             this.set('spec.data', { values: values });
+        },
+
+        _selectionChanged: function(event) {
+            this._setSelection(event.detail.value);
         },
 
         _selectionInfoChanged: function(event) {
