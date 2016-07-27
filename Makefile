@@ -42,7 +42,7 @@ run:
 		$(PORT_MAP) \
 		-e USE_HTTP=1 \
 		-v `pwd`:/srv \
-		-v `pwd`/elements:/root/.local/share/jupyter/nbextensions/declarativewidgets/urth_components/declarativewidgets-explorer \
+		-v `pwd`:/root/.local/share/jupyter/nbextensions/declarativewidgets/urth_components/declarativewidgets-explorer \
 		--workdir '/srv/notebooks' \
 		--user root \
 		$(REPO) bash -c '$(CMD)'
