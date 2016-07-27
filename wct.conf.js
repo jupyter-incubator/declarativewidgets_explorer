@@ -35,11 +35,5 @@ module.exports = {
         //   }
       ]
     }
-  },
-  webserver: {
-    pathMappings: [
-      {'/': 'bower_components'}
-    ],
-    urlPrefix: ''
   }
 };
