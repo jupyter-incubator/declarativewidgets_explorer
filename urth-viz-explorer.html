@@ -182,10 +182,13 @@ Example:
 
         properties: {
 
+            /**
+             * Name of the dataframe reference in the kernel to visualize
+             */
             ref: String,
 
             /**
-             * The `urth-viz-chart` chart type to render.
+             * The chart type to render (bar, line, area or circle)
              */
             type: {
                 type: String,
@@ -193,19 +196,17 @@ Example:
                 observer: '_typeChanged'
             },
 
-            showAsTable: {
-                type: Boolean,
-                computed: '_showAsTable(type)'
-            },
-
+            /**
+             * Limit number of rows on dataframe
+             */
             limit: {
                 type: Number,
                 notify: true,
                 value: 20
             },
 
-            /**
-             * Allows user to select multiple chart components (bars in barchart, slices in pie chart, etc).
+            /*
+             // Allows user to select multiple chart components (bars in barchart, slices in pie chart, etc).
             multiSelect: {
                 type: Boolean,
                 value: false,
@@ -213,20 +214,40 @@ Example:
             },
              */
 
+            /**
+             * @private
+             */
+            showAsTable: {
+                type: Boolean,
+                computed: '_showAsTable(type)'
+            },
+
+            /**
+             * @private
+             */
             options: {
                 type: Array
             },
 
+            /**
+             * @private
+             */
             xOption: {
                 type: Object,
                 value: function() { return { prop: 'x', label: 'x axis' }; }
             },
 
+            /**
+             * @private
+             */
             yOption: {
                 type: Object,
                 value: function() { return { prop: 'y', label: 'y axis' }; }
             },
 
+            /**
+             * Specification object used to generate visualization with `urth-viz-vega`
+             */
             spec: {
                 type: Object,
                 value: function() {
