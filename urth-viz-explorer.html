@@ -386,36 +386,36 @@ Example:
 
             var independentIndex, dependentIndex;
 
+            // regenerate both dropdown label based on latest listbox items
+
             this.options && this.options.some(function(option, i) {
                 if (option.prop === 'x') {
                     independentIndex = 'options.' + i + '.index';
                     return true;
                 }
-            });
+            }) && this.set(independentIndex, null);
 
             this.options && this.options.some(function(option, i) {
                 if (option.prop === 'y') {
                     dependentIndex = 'options.' + i + '.index';
                     return true;
                 }
-            });
-
-            // regenerate both dropdown label based on latest listbox items
-            this.set(independentIndex, null);
-            this.set(dependentIndex, null);
+            }) && this.set(dependentIndex, null);
 
             this.async(function() {
                 var independent = types.indexOf('temporal');
                 if (independent == -1) independent = types.indexOf('quantitative');
                 if (independent == -1) independent = 0;
                 types[independent] = null;
-                this.set(independentIndex, independent);
+                this.set('xOption.index', independent);
+                if (independentIndex !== undefined) this.set(independentIndex, independent);
 
                 var dependent = types.indexOf('quantitative');
                 if (dependent == -1) dependent = 0;
                 if (dependent == independent) dependent++;
                 types[dependent] = null;
-                this.set(dependentIndex, dependent);
+                this.set('yOption.index', dependent);
+                if (dependentIndex !== undefined) this.set(dependentIndex, dependent);
             });
         },
 
