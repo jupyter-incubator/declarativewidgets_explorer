@@ -213,7 +213,6 @@ Example:
             var datatype = this.originalColumnTypes[this.columns.indexOf(column)];
             var set = [{op: '==', desc: 'equals'}, {op: '!=', desc: 'not equals'}];
 
-            //TODO: Need to settle on normalized set of data types, see #426
             //TODO: contain? does not contain? possible with query?
             if (datatype === 'Number') {
                 set.push(
