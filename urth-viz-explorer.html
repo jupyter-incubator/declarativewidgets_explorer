@@ -107,7 +107,8 @@ Example:
                     limit="{{limit}}"
                     row-as-object="true"
                     on-rows-changed="_rowsChanged"
-                    on-columns-changed="_selectDefaults">
+                    on-columns-changed="_selectDefaults"
+                    on-value-changed="_dataChanged">
                 </urth-core-dataframe>
             </urth-viz-query>
         </template>
@@ -272,6 +273,10 @@ Example:
             Urth.DisplayErrorBehavior,
             Urth.VizSelectionBehavior
         ],
+
+        _dataChanged: function(event) {
+            this.df = event.detail.value;
+        },
 
         _typeChanged: function(newType) {
             if (newType != 'table') {
@@ -470,7 +475,7 @@ Example:
                         dataframe.limit = event.detail.value;
                     }.bind(this));
                     dataframe.addEventListener('value-changed', function(event) {
-                        this.df = event.detail.value;
+                        this._dataChanged(event);
                     }.bind(this));
                     dataframe.addEventListener('columns-changed', function (event) {
                         this.async(this._selectDefaults.bind(this, event));
