@@ -14,6 +14,10 @@ jupyter dashboards install --user && \
 jupyter dashboards activate
 endef
 
+define INSTALL_LIBS
+pip install numexpr
+endef
+
 init: node_modules
 	@-docker $(DOCKER_OPTS) rm -f $(CONTAINER_NAME)
 	@docker $(DOCKER_OPTS) run -it --user root --name $(CONTAINER_NAME) \
@@ -25,7 +29,8 @@ init: node_modules
 		ln -s /usr/bin/nodejs /usr/bin/node && \
 		npm install -g bower && \
 		$(INSTALL_DECLWID_CMD) && \
-		$(INSTALL_DASHBOARD_CMD)'
+		$(INSTALL_DASHBOARD_CMD) && \
+		$(INSTALL_LIBS)'
 	@docker $(DOCKER_OPTS) commit $(CONTAINER_NAME) $(REPO)
 	@-docker $(DOCKER_OPTS) rm -f $(CONTAINER_NAME)
 

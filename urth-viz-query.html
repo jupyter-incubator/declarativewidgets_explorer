@@ -215,15 +215,14 @@ Example:
 
             //TODO: Need to settle on normalized set of data types, see #426
             //TODO: contain? does not contain? possible with query?
-            if (/^[Dd]ate/.test(datatype)) {
-            } else if (/^(?:float|int)/.test(datatype)) {
+            if (datatype === 'Number') {
                 set.push(
                     {op: '<', desc: 'less than'},
                     {op: '<=', desc: 'less than or equal'},
                     {op: '>', desc: 'greater than'},
-                    {op: '>=', desc: 'greater than or equal'});
+                    {op: '>=', desc: 'greater than or equal'}
+                );
             }
-
             return set;
         },
 
