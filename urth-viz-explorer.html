@@ -52,7 +52,7 @@ Example:
                 /* force width to stay the same in flex layout */
                 min-width: 24px;
                 max-width: 24px;
-                
+
                 transition: transform 0.5s;
             }
 
@@ -473,10 +473,8 @@ Example:
                     dataframe.limit = this.limit;
                     this.addEventListener('limit-changed', function(event) {
                         dataframe.limit = event.detail.value;
-                    }.bind(this));
-                    dataframe.addEventListener('value-changed', function(event) {
-                        this._dataChanged(event);
-                    }.bind(this));
+                    });
+                    dataframe.addEventListener('value-changed', this._dataChanged.bind(this));
                     dataframe.addEventListener('columns-changed', function (event) {
                         this.async(this._selectDefaults.bind(this, event));
                     }.bind(this));
