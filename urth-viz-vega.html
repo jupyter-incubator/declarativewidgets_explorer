@@ -1,0 +1,223 @@
+<!--
+# (c) Copyright Jupyter Development Team
+# (c) Copyright IBM Corp. 2016
+-->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../urth-core-behaviors/error-display-behavior.html">
+<link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
+<link rel="import" href="../urth-viz-behaviors/urth-viz-selection-behavior.html">
+
+<script src="../requirejs/require.js"></script>
+
+<!--
+A widget that uses vega-lite to render a visualization
+
+Example:
+
+```html
+<urth-viz-vega></urth-viz-vega>
+```
+
+@group Urth Viz
+@element urth-viz-vega
+-->
+<dom-module id="urth-viz-vega">
+    <template>
+        <style>
+          #container .selected { fill: yellow !important; }
+        </style>
+        <div id="container">
+        </div>
+        <content></content>
+    </template>
+
+    <script>
+    (function () {
+        'use strict';
+        var requireConfigured;
+
+        Polymer({
+            is: 'urth-viz-vega',
+            properties: {
+                mode: {
+                    type: String,
+                    value: 'vega-lite'
+                },
+                spec: {
+                    type: Object
+                }
+            },
+
+            observers: [
+                '_specChanged(spec.*)'
+            ],
+
+            behaviors: [
+                Polymer.IronResizableBehavior,
+                Urth.DisplayErrorBehavior,
+                Urth.VizSelectionBehavior
+            ],
+
+            listeners: {
+                'iron-resize': '_resize'
+            },
+
+            _selectionIndexChanged: function() {
+                //TODO
+            },
+
+            _specChanged: function(newSpec) {
+                if (!this.isReady) { return; }
+
+                this.render();
+            },
+
+            _resize: function() {
+                if (!this.view) { return; }
+
+                // TODO
+                this.view.update();
+            },
+
+            created: function() {
+                // Need the relative paths based on the
+                // location of this Polymer element. This has to be done
+                // inside the element to get the proper path. Calling
+                // resolveUrl outside of the element's methods returns
+                // the incorrect path. Only want to do this once and not
+                // for each instance so a global is used to track.
+                if (!requireConfigured) {
+                    requirejs.config({
+                        paths: {
+                            d3: this.resolveUrl('../d3/d3'),
+                            d3_geo_projection: 'http://cdnjs.cloudflare.com/ajax/libs/d3-geo-projection/0.2.16/d3.geo.projection.min',
+                            d3_layout_cloud: 'http://vega.github.io/vega-editor/vendor/d3.layout.cloud',
+                            topojson: 'http://cdnjs.cloudflare.com/ajax/libs/topojson/1.6.20/topojson.min',
+                            vega: this.resolveUrl('../vega/vega'),
+                            vega_embed: this.resolveUrl('../vega-embed/vega-embed'),
+                            vega_lite: this.resolveUrl('../vega-lite/vega-lite'),
+                        },
+                        shim: {
+                            d3: {
+                                exports: 'd3'
+                            },
+                            d3_geo_projection: {deps: ['d3']},
+                            d3_layout_cloud: {deps: ['d3']},
+                            vega: {
+                                deps: ['d3', 'd3_geo_projection', 'd3_layout_cloud', 'topojson'],
+                                exports: 'vg'
+                            },
+                            vega_lite: {
+                                deps: ['vega'],
+                                exports: 'vl'
+                            },
+                            vega_embed: {
+                                deps: ['vg.global', 'vl.global']
+                            }
+                        }
+                    });
+
+                    define('vg.global', ['vega'], function(vgGlobal) {
+                        window.vg = vgGlobal;
+                    });
+
+                    define('vl.global', ['vega_lite'], function(vlGlobal) {
+                        window.vl = vlGlobal;
+                    });
+
+                    requireConfigured = true;
+                }
+            },
+
+            ready: function() {
+                var display = window.getComputedStyle(this).display;
+                if (display === 'none' || document.readyState !== 'complete') {
+                    this.async(this.ready, 200);
+                    return;
+                }
+
+                this.isReady = true;
+                this.render();
+            },
+
+            _watchSelection: function(view, oldView) {
+                if (oldView) {
+                    oldView.on('click.urth', null);
+                }
+
+                if (!view) {
+                    return;
+                }
+
+                view.on('click.urth', function(event, item) {
+                    if (!item || !item.datum || !item.datum._id) return false;
+
+                    var selection = this.selection || [], selectionInfo = this.selectionInfo || [], indexFound;
+                    selectionInfo.some(function(d, i) {
+                        if (d._id == item._id) {
+                            indexFound = i;
+                            return true;
+                        }
+                    });
+
+                    if (indexFound === undefined) {
+                        // add selected item
+
+                        if (!this.multiSelect) {
+                            // clear prior selection
+                            selection = [], selectionInfo = [];
+
+                            // deselect previous CSS selection
+                            if (this._selectedElement) {
+                                this._selectedElement.classList.remove('selected');
+                                delete this._selectedElement;
+                            }
+                        }
+
+                        selection = selection.concat(item.datum);
+                        selectionInfo = selectionInfo.concat(item); //TODO provide the right details from event
+
+                        this.selectionIndex = item.datum._index; //TODO: map from selectionInfo, return Array for multi
+                    } else {
+                        // remove selected item
+                        selection.splice(indexFound, 1);
+                        selectionInfo.splice(indexFound, 1);
+                        this.selectionIndex = null;
+                    }
+
+                    if (!this.selectionAsObject) {
+                        selection = selection.map(function(data) {
+                            return data; //TODO return this.rows[data._index]
+                        });
+                    }
+
+                    //TODO: use Polymer array methods
+                    this._setSelection(selection);
+                    this._setSelectionInfo(selectionInfo);
+
+                    // toggle visual display of item
+                    this._selectedElement = item._svg;
+                    this._selectedElement.classList.toggle('selected');
+                }.bind(this));
+            },
+
+            render: function() {
+                require(['vega_embed'], function(embed) {
+                    this.$.container.innerHTML = '';
+                    embed(this.$.container, { mode: this.mode, spec: this.spec, renderer: 'svg', actions: false }, function(err, result) {
+                        this._watchSelection(result && result.view, this.view);
+                        if (err) {
+                            delete this.view;
+                            this.displayErrorMessage('urth-viz-vega: error loading visual: ' + err);
+                            console.error(err.stack);
+                        } else {
+                            this.view = result.view;
+                            this.fire('urth-viz-render');
+                        }
+                    }.bind(this));
+                }.bind(this));
+            }
+        });
+    })();
+    </script>
+</dom-module>

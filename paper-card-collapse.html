@@ -1,0 +1,87 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-collapse/iron-collapse.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-header-panel/paper-header-panel.html">
+<link rel="import" href="../paper-toolbar/paper-toolbar.html">
+
+<!--
+Paper card with a collapse/expand button in the header.
+Collapsing will hide the content but keep the header
+-->
+<dom-module id="paper-card-collapse">
+    <template>
+        <style>
+            :host {
+                box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14),
+                            0 1px 5px 0 rgba(0, 0, 0, 0.12),
+                            0 3px 1px -2px rgba(0, 0, 0, 0.2);
+
+                --paper-toolbar-background: #eee;
+                --paper-toolbar-height: 32px;
+                --paper-toolbar: {
+                    border-top-left-radius: 2px;
+                    border-top-right-radius: 2px;
+                    border-bottom: 1px solid #e2e2e2;
+                    color: var(--primary-text-color);
+                    font-size: 14px;
+                    overflow: hidden;
+                    width: 295px;
+                };
+                --paper-toolbar-content: {
+                    padding-right: 0;
+                };
+                --paper-header-panel: {
+
+                };
+                --paper-icon-button: {
+                    width: 36px;
+                    height: 36px;
+                };
+                --paper-header-panel-body: {
+                    display: block;
+                    flex: 0 1 auto;
+                };
+            }
+
+            #collapse #collapse-padding {
+                padding: 16px;
+            }
+        </style>
+        <paper-header-panel mode="seamed" class="flex">
+            <paper-toolbar>
+                <span class="title" style="font-size: 14px; margin-left: 0;">{{heading}}</span>
+                <paper-icon-button id="collapse-btn" icon="remove" title="Expand" on-tap="toggle"></paper-icon-button>
+            </paper-toolbar>
+            <div>
+                <iron-collapse id="collapse" class="card-content" opened="true">
+                    <div id="collapse-padding">
+                        <content></content>
+                    </div>
+                </iron-collapse>
+            </div>
+        </paper-header-panel>
+    </template>
+    <script>
+    (function() {
+        'use strict';
+        Polymer({
+            is: 'paper-card-collapse',
+            properties: {
+                heading: {
+                    type: String,
+                    value: ''
+                }
+            },
+            ready: function() {
+
+            },
+            toggle: function() {
+                this.$.collapse.toggle();
+                var collapseBtn = this.$$('#collapse-btn');
+                var currentIcon = collapseBtn.getAttribute('icon');
+                collapseBtn.setAttribute('icon', currentIcon === 'add' ? 'remove' : 'add');
+            }
+        });
+    })();
+    </script>
+</dom-module>
