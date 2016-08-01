@@ -160,7 +160,8 @@ Example:
                 <urth-viz-table
                     datarows="{{df.data}}"
                     columns="{{df.columns}}"
-                    on-selection-changed="_selectionChanged">
+                    selection-index="{{selectionIndex}}"
+                    on-selection-info-changed="_selectionInfoChanged">
                 </urth-viz-table>
             </template>
 
@@ -289,13 +290,6 @@ Example:
         _typeChanged: function(newType) {
             if (newType != 'table') {
                 this.set('spec.mark', newType);
-            }
-        },
-
-        _selectionIndexChanged: function() {
-            var obj = this.selectionAsObject ? this.spec && this.spec.data.values : this.df && this.df.data;
-            if (obj) {
-                this._setSelection(obj[this.selectionIndex]); //TODO: multi
             }
         },
 
@@ -443,8 +437,12 @@ Example:
             this.set('spec.data', { values: values });
         },
 
-        _selectionChanged: function(event) {
-            this._setSelection(event.detail.value);
+        _selectionIndexChanged: function() {
+            var obj = this.selectionAsObject ?
+                this.spec && this.spec.data.values : this.df && this.df.data;
+            if (obj) {
+                this._setSelection(obj[this.selectionIndex]); //TODO: multi
+            }
         },
 
         _selectionInfoChanged: function(event) {
