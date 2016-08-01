@@ -157,7 +157,12 @@ Example:
         <div id="viz-explorer-viz">
             <!-- table view -->
             <template is="dom-if" if="{{showAsTable}}">
-                <urth-viz-table datarows="{{df.data}}" columns="{{df.columns}}"></urth-viz-table>
+                <urth-viz-table
+                    datarows="{{df.data}}"
+                    columns="{{df.columns}}"
+                    selection-index="{{selectionIndex}}"
+                    on-selection-info-changed="_selectionInfoChanged">
+                </urth-viz-table>
             </template>
 
             <!-- viz view -->
@@ -285,13 +290,6 @@ Example:
         _typeChanged: function(newType) {
             if (newType != 'table') {
                 this.set('spec.mark', newType);
-            }
-        },
-
-        _selectionIndexChanged: function() {
-            var obj = this.selectionAsObject ? this.spec && this.spec.data.values : this.df && this.df.data;
-            if (obj) {
-                this._setSelection(obj[this.selectionIndex]); //TODO: multi
             }
         },
 
@@ -437,6 +435,14 @@ Example:
             });
 
             this.set('spec.data', { values: values });
+        },
+
+        _selectionIndexChanged: function() {
+            var obj = this.selectionAsObject ?
+                this.spec && this.spec.data.values : this.df && this.df.data;
+            if (obj) {
+                this._setSelection(obj[this.selectionIndex]); //TODO: multi
+            }
         },
 
         _selectionInfoChanged: function(event) {
