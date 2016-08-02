@@ -149,7 +149,7 @@ Example:
 
             <!-- dataframe query -->
             <paper-card-collapse class="viz-explorer-controls-section" heading="Query">
-                <content id="viz-query" select="urth-viz-query"></content>
+                <content select="urth-viz-query"></content>
             </paper-card-collapse>
         </iron-collapse>
 
@@ -472,17 +472,23 @@ Example:
             this.options = this._optionsMap[this.type];
 
             if (this.ref) {
-                // Move template-generated query/dataframe to content
-                //TODO: not ready until template dom-if is complete. Is there a callback for this?
-                this.async(function() { this.$['viz-query'].appendChild(this.$$('urth-viz-query')); }, 1000);
+                // template not ready until dom-if is stamped, so use microtask
+                this.async(function() {
+                    // Move template-generated dataframe from shadow DOM to content DOM
+                    Polymer.dom(this).appendChild(this.$$('urth-viz-query'));
+          
+                    // Call ready() directly to bind to new DOM document
+                    this.querySelector('urth-core-dataframe').ready();
+                });
             } else {
-                // If no dataframe instance is specified with `ref`, look instead for a child dataframe
-                // and  bind that value to df whenever it changes,
+                // If no dataframe instance is specified with `ref`, look instead for a provided child dataframe
                 var dataframe = this.querySelector('urth-core-dataframe');
 
-                // manually bind values to 'df' property if using child
                 if (dataframe) {
+                    // manually bind values to 'df'
                     this.df = dataframe.value;
+
+                    // and set up properties and events
                     dataframe.rowAsObject = true;
                     dataframe.limit = this.limit;
                     this.addEventListener('limit-changed', function(event) {
