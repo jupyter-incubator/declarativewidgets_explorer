@@ -233,7 +233,8 @@ Example:
              * @private
              */
             options: {
-                type: Array
+                type: Array,
+                value: function() { return []; }
             },
 
             /**
@@ -394,39 +395,50 @@ Example:
             var dataframe = event.target,
                 types = dataframe.value.columnTypes.map(function(datatype) { return this._columnType(datatype); }, this);
 
-            var independentIndex, dependentIndex;
+            // in case value-changed hasn't fired yet, this.df will be needed by observers
+            this.df = dataframe.value;
 
-            // regenerate both dropdown label based on latest listbox items
+            // regenerate both dropdown label based on latest listbox items where current selection is no longer valid
 
-            this.options && this.options.some(function(option, i) {
+            var independentOption, dependentOption;
+
+            this.options.some(function(option, i) {
                 if (option.prop === 'x') {
-                    independentIndex = 'options.' + i + '.index';
+                    independentOption = i;
                     return true;
                 }
-            }) && this.set(independentIndex, null);
+            });
 
-            this.options && this.options.some(function(option, i) {
+            this.options.some(function(option, i) {
                 if (option.prop === 'y') {
-                    dependentIndex = 'options.' + i + '.index';
+                    dependentOption = i;
                     return true;
                 }
-            }) && this.set(dependentIndex, null);
+            });
 
-            this.async(function() {
+            if (independentOption !== undefined
+                    && dataframe.value.columns.indexOf(this.get('options.' + independentOption + '.column')) == -1) {
                 var independent = types.indexOf('temporal');
                 if (independent == -1) independent = types.indexOf('quantitative');
                 if (independent == -1) independent = 0;
                 types[independent] = null;
-                this.set('xOption.index', independent);
-                if (independentIndex !== undefined) this.set(independentIndex, independent);
+                this.set('options.' + independentOption + '.index', null);
+                this.async(function() {
+                    this.set('options.' + independentOption + '.index', independent);
+                });
+            }
 
+            if (dependentOption !== undefined
+                    && dataframe.value.columns.indexOf(this.get('options.' + dependentOption + '.column')) == -1) {
                 var dependent = types.indexOf('quantitative');
                 if (dependent == -1) dependent = 0;
                 if (dependent == independent) dependent++;
                 types[dependent] = null;
-                this.set('yOption.index', dependent);
-                if (dependentIndex !== undefined) this.set(dependentIndex, dependent);
-            });
+                this.set('options.' + dependentOption + '.index', null);
+                this.async(function() {
+                    this.set('options.' + dependentOption + '.index', dependent);
+                });
+            }
         },
 
         _rowsChanged: function(event) {
