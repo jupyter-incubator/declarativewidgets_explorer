@@ -9,9 +9,11 @@
 <link rel="import" href="../urth-viz-behaviors/urth-viz-selection-behavior.html">
 
 <link rel="import" href="../iron-collapse/iron-collapse.html">
+<link rel="import" href="../paper-dialog/paper-dialog.html">
 <link rel="import" href="../paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../paper-input/paper-input.html">
+<link rel="import" href="../paper-input/paper-textarea.html">
 <link rel="import" href="../paper-item/paper-item.html">
 <link rel="import" href="../paper-listbox/paper-listbox.html">
 
@@ -45,15 +47,49 @@ Example:
                 overflow-x: auto;
             }
 
-            #controls-collapse-btn {
+            #controls-toolbar {
+                display: flex;
+                flex-direction: column;
+            }
+
+            #controls-collapse-btn,
+            #edit-spec-btn {
+                margin: 0;
                 padding-left: 0px;
                 padding-right: 0px;
 
                 /* force width to stay the same in flex layout */
                 min-width: 24px;
                 max-width: 24px;
-
+            }
+            #controls-collapse-btn {
                 transition: transform 0.5s;
+            }
+
+            #spec-dialog {
+                position: absolute;
+                top: 1em;
+                bottom: 2em;
+                left: 3em;
+                right: 3em;
+                max-width: 100%;
+                max-height: 100%;
+                border-radius: 2px;
+                margin: 0;
+            }
+            #spec-dialog-body {
+                display: flex;
+                flex-direction: column;
+                margin: 0;
+                padding: 0;
+                height: 100%;
+            }
+            #spec-dialog-body #spec-editor {
+                flex-grow: 1;
+                overflow-y: scroll;
+            }
+            #spec-dialog .buttons {
+                min-height: 2em;
             }
 
             .viz-explorer-controls-section {
@@ -72,6 +108,7 @@ Example:
             }
 
             :host {
+                position: relative;
                 display: -ms-flexbox;
                 display: -webkit-flex;
                 display: flex;
@@ -95,6 +132,11 @@ Example:
                 --paper-input-container-label-floating: {
                     font-size: 16px;
                 };
+                --iron-autogrow-textarea: {
+                    overflow: hidden;
+                    padding-left: 1em;
+                    padding-right: 1em;
+                };
             }
         </style>
 
@@ -113,7 +155,19 @@ Example:
         </template>
 
         <!-- Button to collapse contols -->
-        <paper-icon-button id="controls-collapse-btn" icon="chevron-left" on-tap="_toggleCollapse" noink="true"></paper-icon-button>
+        <div id="controls-toolbar">
+            <paper-icon-button
+                id="controls-collapse-btn"
+                icon="chevron-left"
+                on-tap="_toggleCollapse"
+                noink="true"></paper-icon-button>
+            <template is="dom-if" if="[[!showAsTable]]">
+                <paper-button
+                    id="edit-spec-btn"
+                    on-tap="_showEditDialog"
+                    title="Edit chart JSON">{ }</paper-button>
+            </template>
+        </div>
 
         <!-- controls section -->
         <iron-collapse id="viz-explorer-controls" horizontal="true" opened="true">
@@ -132,7 +186,7 @@ Example:
             </paper-card-collapse>
 
             <!-- select viz properties -->
-            <template is="dom-if" if="{{!showAsTable}}">
+            <template is="dom-if" if="[[!showAsTable]]">
                 <paper-card-collapse class="viz-explorer-controls-section" heading="Viz Options">
                     <template is="dom-repeat" items="{{options}}" as="option">
                         <paper-dropdown-menu label="{{option.label}}" selected-item-label="{{option.column}}">
@@ -155,7 +209,7 @@ Example:
         <!-- viz section -->
         <div id="viz-explorer-viz">
             <!-- table view -->
-            <template is="dom-if" if="{{showAsTable}}">
+            <template is="dom-if" if="[[showAsTable]]">
                 <urth-viz-table
                     datarows="{{df.data}}"
                     columns="{{df.columns}}"
@@ -165,7 +219,7 @@ Example:
             </template>
 
             <!-- viz view -->
-            <template is="dom-if" if="{{!showAsTable}}">
+            <template is="dom-if" if="[[!showAsTable]]">
                 <urth-viz-vega
                     mode="vega-lite"
                     spec="{{spec}}"
@@ -173,6 +227,16 @@ Example:
                     on-selection-info-changed="_selectionInfoChanged">
                 </urth-viz-vega>
             </template>
+
+            <paper-dialog id="spec-dialog" on-iron-overlay-closed="_closeEditDialog">
+                <div id="spec-dialog-body">
+                    <paper-textarea id="spec-editor" value="[[specString]]"></paper-textarea>
+                    <div class="buttons">
+                        <paper-button dialog-dismiss>Cancel</paper-button>
+                        <paper-button dialog-confirm>Update</paper-button>
+                    </div>
+                </div>
+            </paper-dialog>
         </div>
 
         <content></content>
@@ -268,6 +332,11 @@ Example:
                         encoding: {}
                     };
                 }
+            },
+            specString: {
+                type: String,
+                computed: '_computeSpecString(spec.*)',
+                notify: true
             }
         },
 
@@ -282,6 +351,24 @@ Example:
             Urth.DisplayErrorBehavior,
             Urth.VizSelectionBehavior
         ],
+
+        _closeEditDialog: function(event) {
+            var specEditor = this.$['spec-editor'];
+            if (event.detail.confirmed) {
+                var newSpec = JSON.parse(specEditor.value);
+
+                // validate spec
+                if (newSpec.mark &&
+                    newSpec.data &&
+                    newSpec.encoding) {
+
+                    this.spec = newSpec;
+                }
+            } else {
+                // reset text to spec
+                specEditor.value = this._computeSpecString();
+            }
+        },
 
         _dataChanged: function(event) {
             this.df = event.detail.value;
@@ -464,6 +551,14 @@ Example:
             this._setSelectionInfo(event.detail.value);
         },
 
+        _showEditDialog: function() {
+            this.$['spec-dialog'].open();
+        },
+
+        _computeSpecString: function() {
+            return JSON.stringify(this.spec, null, 4);
+        },
+
         _toggleCollapse: function() {
             this.$['viz-explorer-controls'].toggle();
             var collapseBtn = this.$['controls-collapse-btn'];
@@ -524,6 +619,9 @@ Example:
                     });
                 }
             }
+
+            // fit spec edit dialog into the explorer
+            this.$['spec-dialog'].fitInto = this;
         }
     });
 
