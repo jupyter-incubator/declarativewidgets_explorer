@@ -104,7 +104,6 @@ Example:
                 <urth-core-dataframe
                     ref$="{{ref}}"
                     value="{{df}}"
-                    limit="{{limit}}"
                     row-as-object="true"
                     on-rows-changed="_rowsChanged"
                     on-columns-changed="_selectDefaults"
@@ -129,7 +128,7 @@ Example:
                         <paper-item name="circle">Scatter Chart</paper-item>
                     </paper-listbox>
                 </paper-dropdown-menu>
-                <paper-input label="Limit" value="{{limit}}"></paper-input>
+                <paper-input label="Limit" type="number" value="{{limit}}"></paper-input>
             </paper-card-collapse>
 
             <!-- select viz properties -->
@@ -149,7 +148,7 @@ Example:
 
             <!-- dataframe query -->
             <paper-card-collapse class="viz-explorer-controls-section" heading="Query">
-                <content id="viz-query" select="urth-viz-query"></content>
+                <content select="urth-viz-query"></content>
             </paper-card-collapse>
         </iron-collapse>
 
@@ -234,7 +233,8 @@ Example:
              * @private
              */
             options: {
-                type: Array
+                type: Array,
+                value: function() { return []; }
             },
 
             /**
@@ -395,39 +395,50 @@ Example:
             var dataframe = event.target,
                 types = dataframe.value.columnTypes.map(function(datatype) { return this._columnType(datatype); }, this);
 
-            var independentIndex, dependentIndex;
+            // in case value-changed hasn't fired yet, this.df will be needed by observers
+            this.df = dataframe.value;
 
-            // regenerate both dropdown label based on latest listbox items
+            // regenerate both dropdown label based on latest listbox items where current selection is no longer valid
 
-            this.options && this.options.some(function(option, i) {
+            var independentOption, dependentOption;
+
+            this.options.some(function(option, i) {
                 if (option.prop === 'x') {
-                    independentIndex = 'options.' + i + '.index';
+                    independentOption = i;
                     return true;
                 }
-            }) && this.set(independentIndex, null);
+            });
 
-            this.options && this.options.some(function(option, i) {
+            this.options.some(function(option, i) {
                 if (option.prop === 'y') {
-                    dependentIndex = 'options.' + i + '.index';
+                    dependentOption = i;
                     return true;
                 }
-            }) && this.set(dependentIndex, null);
+            });
 
-            this.async(function() {
+            if (independentOption !== undefined
+                    && dataframe.value.columns.indexOf(this.get('options.' + independentOption + '.column')) == -1) {
                 var independent = types.indexOf('temporal');
                 if (independent == -1) independent = types.indexOf('quantitative');
                 if (independent == -1) independent = 0;
                 types[independent] = null;
-                this.set('xOption.index', independent);
-                if (independentIndex !== undefined) this.set(independentIndex, independent);
+                this.set('options.' + independentOption + '.index', null);
+                this.async(function() {
+                    this.set('options.' + independentOption + '.index', independent);
+                });
+            }
 
+            if (dependentOption !== undefined
+                    && dataframe.value.columns.indexOf(this.get('options.' + dependentOption + '.column')) == -1) {
                 var dependent = types.indexOf('quantitative');
                 if (dependent == -1) dependent = 0;
                 if (dependent == independent) dependent++;
                 types[dependent] = null;
-                this.set('yOption.index', dependent);
-                if (dependentIndex !== undefined) this.set(dependentIndex, dependent);
-            });
+                this.set('options.' + dependentOption + '.index', null);
+                this.async(function() {
+                    this.set('options.' + dependentOption + '.index', dependent);
+                });
+            }
         },
 
         _rowsChanged: function(event) {
@@ -472,22 +483,33 @@ Example:
             this.options = this._optionsMap[this.type];
 
             if (this.ref) {
-                // Move template-generated query/dataframe to content
-                //TODO: not ready until template dom-if is complete. Is there a callback for this?
-                this.async(function() { this.$['viz-query'].appendChild(this.$$('urth-viz-query')); }, 1000);
+                // template not ready until dom-if is stamped, so use microtask
+                this.async(function() {
+                    // Move template-generated dataframe from shadow DOM to content DOM
+                    Polymer.dom(this).appendChild(this.$$('urth-viz-query'));
+          
+                    // Call ready() directly to bind to new DOM document
+                    var dataframe = this.querySelector('urth-core-dataframe');
+                    dataframe.ready();
+
+                    dataframe.limit = this.limit;
+
+                    // Bind limit to dataframe, but coerce to Number
+                    this.addEventListener('limit-changed', function(event) {
+                        dataframe.limit = +event.detail.value;
+                    });
+                });
             } else {
-                // If no dataframe instance is specified with `ref`, look instead for a child dataframe
-                // and  bind that value to df whenever it changes,
+                // If no dataframe instance is specified with `ref`, look instead for a provided child dataframe
                 var dataframe = this.querySelector('urth-core-dataframe');
 
-                // manually bind values to 'df' property if using child
                 if (dataframe) {
+                    // manually bind values to 'df'
                     this.df = dataframe.value;
+
+                    // and set up properties and events
                     dataframe.rowAsObject = true;
                     dataframe.limit = this.limit;
-                    this.addEventListener('limit-changed', function(event) {
-                        dataframe.limit = event.detail.value;
-                    });
                     dataframe.addEventListener('value-changed', this._dataChanged.bind(this));
                     dataframe.addEventListener('columns-changed', function (event) {
                         this.async(this._selectDefaults.bind(this, event));
@@ -495,6 +517,11 @@ Example:
                     dataframe.addEventListener('rows-changed', function(event) {
                         this.async(this._rowsChanged.bind(this, event));
                     }.bind(this));
+
+                    // Bind limit to dataframe, but coerce to Number
+                    this.addEventListener('limit-changed', function(event) {
+                        dataframe.limit = +event.detail.value;
+                    });
                 }
             }
         }
