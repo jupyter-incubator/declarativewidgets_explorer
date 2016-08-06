@@ -5,7 +5,7 @@
 <link rel="import" href="../polymer/polymer.html">
 
 <link rel="import" href="../urth-core-behaviors/error-display-behavior.html">
-<!-- <link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html"> -->
+<link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../urth-viz-behaviors/urth-viz-selection-behavior.html">
 
 <link rel="import" href="../iron-collapse/iron-collapse.html">
@@ -347,10 +347,19 @@ Example:
         ],
 
         behaviors: [
-//            Polymer.IronResizableBehavior,
+            Polymer.IronResizableBehavior,
             Urth.DisplayErrorBehavior,
             Urth.VizSelectionBehavior
         ],
+
+        listeners: {
+            'iron-resize': '_resize'
+        },
+
+        _resize: function() {
+            var vega = this.$$('urth-viz-vega');
+            if (vega) vega._resize();
+        },
 
         _closeEditDialog: function(event) {
             var specEditor = this.$['spec-editor'];
