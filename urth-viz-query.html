@@ -11,6 +11,7 @@
 <link rel="import" href="../paper-input/paper-input.html">
 <link rel="import" href="../iron-icon/iron-icon.html">
 <link rel="import" href="multi-select-menu.html">
+<link rel="import" href="serialize-behavior.html">
 
 <!--
 This element represents a query executed against an urth-core-dataframe element.
@@ -97,17 +98,17 @@ Example:
                 <div class="query-list">
                     <template is="dom-repeat" items="{{group.aggregators}}" as="agg">
                         <div class="query-list-item query-agg">
-                            <paper-dropdown-menu class="agg-op" label="operation" selected-item-label="{{agg.op}}">
-                                <paper-listbox class="dropdown-content">
-                                    <paper-item>sum</paper-item>
-                                    <paper-item>mean</paper-item>
+                            <paper-dropdown-menu class="agg-op" label="operation">
+                                <paper-listbox class="dropdown-content" selected="{{agg.op}}" attr-for-selected="value">
+                                    <paper-item value="sum">sum</paper-item>
+                                    <paper-item value="mean">mean</paper-item>
                                 </paper-listbox>
                             </paper-dropdown-menu>
                             <div class="delete-row">
-                                <paper-dropdown-menu class="agg-col" label="column" selected-item-label="{{agg.col}}">
-                                    <paper-listbox class="dropdown-content">
+                                <paper-dropdown-menu class="agg-col" label="column">
+                                    <paper-listbox class="dropdown-content" selected="{{agg.col}}" attr-for-selected="value">
                                         <template is="dom-repeat" items="{{originalColumns}}" filter="filterItemsByNumberType">
-                                            <paper-item>{{item}}</paper-item>
+                                            <paper-item value="{{item}}">{{item}}</paper-item>
                                         </template>
                                     </paper-listbox>
                                 </paper-dropdown-menu>
@@ -132,10 +133,10 @@ Example:
         <div class="query-list">
             <template is="dom-repeat" items="{{filters}}" as="filter">
                 <div class="query-list-item query-filter">
-                    <paper-dropdown-menu label="column" selected-item-label="{{filter.col}}">
-                        <paper-listbox class="dropdown-content">
+                    <paper-dropdown-menu label="column">
+                        <paper-listbox class="dropdown-content" selected="{{filter.col}}" attr-for-selected="value">
                             <template is="dom-repeat" items="{{originalColumns}}">
-                                <paper-item>{{item}}</paper-item>
+                                <paper-item value="{{item}}">{{item}}</paper-item>
                             </template>
                         </paper-listbox>
                     </paper-dropdown-menu>
@@ -191,14 +192,24 @@ Example:
             // n-element array with shape to fit query form
             filters: {
                 type: Array,
+                serialize: true,
                 value: function() { return []; }
             },
 
             groups: {
                 type: Array,
+                serialize: true,
                 value: function() { return []; }
             }
         },
+
+        observers: [
+            'saveState(filters.*,groups.*)',
+        ],
+
+        behaviors: [
+            Urth.SerializeBehavior,
+        ],
 
         filterExpression: function(col, op, val) {
             if (Number.isNaN(+val)) {
@@ -267,6 +278,7 @@ Example:
 
             // Keep track of dataframe columns prior to group operation
             this.originalColumns = this.columns;
+            this.originalColumnTypes = dataframe.columnTypes;
 
             dataframe.addEventListener('columns-changed', function(event) {
                 this.columns = dataframe.columns;
@@ -285,6 +297,10 @@ Example:
                     this.originalColumnTypes = this.columnTypes;
                 }
             }.bind(this));
+        },
+
+        attached: function() {
+            this.async(this.restoreState, 5000);
         }
     });
 })();
