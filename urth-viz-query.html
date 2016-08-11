@@ -142,7 +142,7 @@ Example:
                     </paper-dropdown-menu>
                     <paper-dropdown-menu label="comparator">
                         <paper-listbox class="dropdown-content" selected="{{filter.op}}" attr-for-selected="value">
-                            <template is="dom-repeat" items="{{filterOpSet(filter.col)}}">
+                            <template is="dom-repeat" items="{{filterOpSet(filter.col,_dfReady)}}">
                                 <paper-item value="{{item.op}}">{{item.desc}}</paper-item>
                             </template>
                         </paper-listbox>
@@ -200,6 +200,11 @@ Example:
                 type: Array,
                 serialize: true,
                 value: function() { return []; }
+            },
+
+            _dfReady: {
+                type: Boolean,
+                value: false
             }
         },
 
@@ -218,8 +223,8 @@ Example:
             return col + ' ' + op + ' ' + val;
         },
 
-        filterOpSet: function(column) {
-            if (!column) { return []; }
+        filterOpSet: function(column, ready) {
+            if (!column || !ready) { return []; }
 
             var datatype = this.originalColumnTypes[this.columns.indexOf(column)];
             var set = [{op: '==', desc: 'equals'}, {op: '!=', desc: 'not equals'}];
@@ -287,6 +292,8 @@ Example:
                     // Only update if this is not a group operation
                     this.originalColumns = this.columns;
                 }
+
+                this.set('_dfReady', dataframe.columns && dataframe.columnTypes);
             }.bind(this));
 
             dataframe.addEventListener('column-types-changed', function(event) {
@@ -296,11 +303,13 @@ Example:
                     // Only update if this is not a group operation
                     this.originalColumnTypes = this.columnTypes;
                 }
+
+                this.set('_dfReady', dataframe.columns && dataframe.columnTypes);
             }.bind(this));
         },
 
         attached: function() {
-            this.async(this.restoreState, 5000);
+            this.restoreState();
         }
     });
 })();
