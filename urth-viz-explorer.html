@@ -7,6 +7,7 @@
 <link rel="import" href="../urth-core-behaviors/error-display-behavior.html">
 <link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../urth-viz-behaviors/urth-viz-selection-behavior.html">
+<link rel="import" href="serialize-behavior.html">
 
 <link rel="import" href="../iron-collapse/iron-collapse.html">
 <link rel="import" href="../paper-dialog/paper-dialog.html">
@@ -141,7 +142,7 @@ Example:
         </style>
 
         <!-- create dataframe if set as "ref" attribute -->
-        <template is="dom-if" if="{{ref}}">
+        <template is="dom-if" if="[[ref]]">
             <urth-viz-query>
                 <urth-core-dataframe
                     ref$="{{ref}}"
@@ -230,7 +231,7 @@ Example:
 
             <paper-dialog id="spec-dialog" on-iron-overlay-closed="_closeEditDialog">
                 <div id="spec-dialog-body">
-                    <paper-textarea id="spec-editor" value="[[specString]]"></paper-textarea>
+                    <paper-textarea id="spec-editor" value="[[_computeSpecString(spec.*)]]"></paper-textarea>
                     <div class="buttons">
                         <paper-button dialog-dismiss>Cancel</paper-button>
                         <paper-button dialog-confirm>Update</paper-button>
@@ -262,6 +263,7 @@ Example:
             type: {
                 type: String,
                 value: 'bar',
+                serialize: true,
                 observer: '_typeChanged'
             },
 
@@ -271,6 +273,7 @@ Example:
             limit: {
                 type: Number,
                 notify: true,
+                serialize: true,
                 value: 20
             },
 
@@ -307,6 +310,7 @@ Example:
              */
             xOption: {
                 type: Object,
+//                serialize: true,
                 value: function() { return { prop: 'x', label: 'x axis' }; }
             },
 
@@ -316,6 +320,7 @@ Example:
              */
             yOption: {
                 type: Object,
+//                serialize: true,
                 value: function() { return { prop: 'y', label: 'y axis' }; }
             },
 
@@ -333,21 +338,20 @@ Example:
                     };
                 }
             },
-            specString: {
-                type: String,
-                computed: '_computeSpecString(spec.*)',
-                notify: true
-            }
+
+            _dfReady: Boolean
         },
 
         observers: [
+            'saveState(type,limit,xOption,yOption)',
             '_specChanged(spec.encoding.*)',
-            '_pickOptions(type)',
+            '_pickOptions(type, _dfReady)',
             '_optionsChanged(options.*)'
         ],
 
         behaviors: [
             Polymer.IronResizableBehavior,
+            Urth.SerializeBehavior,
             Urth.DisplayErrorBehavior,
             Urth.VizSelectionBehavior
         ],
@@ -381,6 +385,7 @@ Example:
 
         _dataChanged: function(event) {
             this.df = event.detail.value;
+            this.set('_dfReady', true);
         },
 
         _typeChanged: function(newType) {
@@ -405,7 +410,9 @@ Example:
             }
         },
 
-        _pickOptions: function(newType) {
+        _pickOptions: function(newType, ready) {
+            if (!ready) { return; }
+
             // clear out any fields in the spec from previous type
             this.set('spec.encoding', {});
             this.set('options', []);
@@ -493,6 +500,7 @@ Example:
 
             // in case value-changed hasn't fired yet, this.df will be needed by observers
             this.df = dataframe.value;
+            this.set('_dfReady', true);
 
             // regenerate both dropdown label based on latest listbox items where current selection is no longer valid
 
@@ -590,7 +598,8 @@ Example:
                 // template not ready until dom-if is stamped, so use microtask
                 this.async(function() {
                     // Move template-generated dataframe from shadow DOM to content DOM
-                    Polymer.dom(this).appendChild(this.$$('urth-viz-query'));
+                    // and trigger state restore
+                    Polymer.dom(this).appendChild(this.$$('urth-viz-query')).restoreState();
           
                     // Call ready() directly to bind to new DOM document
                     var dataframe = this.querySelector('urth-core-dataframe');
@@ -631,6 +640,10 @@ Example:
 
             // fit spec edit dialog into the explorer
             this.$['spec-dialog'].fitInto = this;
+        },
+
+        attached: function() {
+            this.restoreState();
         }
     });
 

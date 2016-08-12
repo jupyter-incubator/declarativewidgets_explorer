@@ -59,10 +59,12 @@
 
             /**
              * Iterate through properties and for those marked `serialize` pull state values out of cell metadata
-             * Must be attached to document DOM as a child of a Jupyter notebook cell. Typically called from `attached`
+             * Must be attached to document DOM as a child of a Jupyter notebook cell or will fail silently.
+             * Typically called from `attached`
              */
             restoreState: function() {
-                var state = getMetadata(this).state || {};
+                var metadata = getMetadata(this) || {},
+                    state = metadata.state || {};
 
                 for (var prop in this.properties) {
                     if (this.properties[prop].serialize && prop in state) {
