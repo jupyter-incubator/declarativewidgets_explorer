@@ -106,7 +106,7 @@ Example:
                             <div class="delete-row">
                                 <paper-dropdown-menu class="agg-col" label="column" selected-item-label="{{agg.col}}">
                                     <paper-listbox class="dropdown-content">
-                                        <template is="dom-repeat" items="{{originalColumns}}">
+                                        <template is="dom-repeat" items="{{originalColumns}}" filter="filterItemsByNumberType">
                                             <paper-item>{{item}}</paper-item>
                                         </template>
                                     </paper-listbox>
@@ -223,6 +223,10 @@ Example:
                 );
             }
             return set;
+        },
+
+        filterItemsByNumberType: function(item) {
+            return this.columnTypes[this.columns.indexOf(item)] == 'Number';
         },
 
         hasValue: function(filter) {
