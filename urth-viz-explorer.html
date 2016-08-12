@@ -116,12 +116,19 @@ Example:
                 -webkit-flex-direction: row;
                 flex-direction: row;
 
+                --paper-card-collapse-padding: 1em;
                 --paper-item-min-height: 24px;
                 --paper-item: {
                     font-size: 14px;
                 };
+                --paper-font-subhead: {
+                    font-size: 14px;
+                    font-weight: 400;
+                    line-height: 20px;
+                    -webkit-font-smoothing: antialiased;
+                };
                 --paper-input-container: {
-                    padding: 4px 0;
+                    padding: 0;
                 };
                 --paper-input-container-input: {
                     font-size: 14px;
@@ -137,6 +144,10 @@ Example:
                     padding-left: 1em;
                     padding-right: 1em;
                 };
+            }
+
+            :host #query-card {
+                --paper-card-collapse-padding: 0;
             }
         </style>
 
@@ -201,7 +212,7 @@ Example:
             </template>
 
             <!-- dataframe query -->
-            <paper-card-collapse class="viz-explorer-controls-section" heading="Query">
+            <paper-card-collapse id="query-card" class="viz-explorer-controls-section" heading="Query">
                 <content select="urth-viz-query"></content>
             </paper-card-collapse>
         </iron-collapse>
@@ -591,7 +602,7 @@ Example:
                 this.async(function() {
                     // Move template-generated dataframe from shadow DOM to content DOM
                     Polymer.dom(this).appendChild(this.$$('urth-viz-query'));
-          
+
                     // Call ready() directly to bind to new DOM document
                     var dataframe = this.querySelector('urth-core-dataframe');
                     dataframe.ready();

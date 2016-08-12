@@ -8,6 +8,7 @@
 <link rel="import" href="../paper-listbox/paper-listbox.html">
 <link rel="import" href="../paper-item/paper-item.html">
 <link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../paper-input/paper-input.html">
 <link rel="import" href="../iron-icon/iron-icon.html">
 <link rel="import" href="multi-select-menu.html">
@@ -30,29 +31,55 @@ Example:
             /* TODO make this configurable using --urth-viz-query-row-width */
             width: 200px;
         }
-
-        .config-item {
+        #query-add-btns {
+            display: flex;
+            justify-content: center;
+        }
+        #query-add-btns paper-button {
+            width: 50%;
+        }
+        .query-remove-btn {
+            position: absolute;
+            top: 0;
+            right: 0;
+        }
+        .query-remove-btn,
+        .agg-remove-btn {
+            width: 2.5em;
+            height: 2.5em;
+        }
+        .query-item {
+            position: relative;
+            padding: 0 1em 1em;
+            border-bottom: 1px solid #eee;
+        }
+        .query-item:hover {
+            background-color: #eee;
+        }
+        .query-item > * {
             display: block;
         }
-        .delete-row {
-            /* TODO make this configurable using --urth-viz-query-row-width */
-            width: 260px;
-        }
-
-        .query-list-item:not(:last-of-type) {
-            margin-bottom: 1em;
-        }
-        .query-list-item > * {
-            display: block;
-        }
-
         .query-label {
             font-variant: small-caps;
             margin-bottom: 0;
         }
-
+        .agg-list {
+            padding-left: 1em;
+        }
+        .add-agg {
+            padding: 0.4em 0 0 0.4em;
+        }
         :host {
+            display: flex;
+            flex-direction: column;
+
             --paper-item-min-height: 24px;
+            --paper-font-subhead: {
+                font-size: 14px;
+                font-weight: 400;
+                line-height: 20px;
+                -webkit-font-smoothing: antialiased;
+            };
             --paper-item: {
                 font-size: 1em;
             };
@@ -61,117 +88,127 @@ Example:
                 text-transform: none;
             };
             --paper-input-container: {
-                padding: 4px 0;
+                padding: 0;
             };
             --paper-input-container-label: {
                 font-size: 14px;
             };
         }
     </style>
-
     <template>
-        <template is="dom-if" if="[[!groups.length]]">
-            <paper-button on-tap="addGroup">
-                <iron-icon icon="icons:add"></iron-icon>
-                Add group-by
-            </paper-button>
-        </template>
+        <template is="dom-repeat" items={{queries}} as="query" index-as="query-index">
+            <div class="query-item" data-query-index$="{{query-index}}">
+                <paper-icon-button
+                    class="query-remove-btn"
+                    on-tap="removeQuery"
+                    icon="clear"></paper-icon-button>
 
-        <!-- Groups -->
-        <template is="dom-repeat" items="{{groups}}" as="group">
-            <div class="query-group">
                 <!-- group -->
-                <div class="delete-row">
+                <template is="dom-if" if="{{query.group}}">
                     <multi-select-menu
-                        label="Group By"
-                        csv="{{group.col}}"
-                        items="{{originalColumns}}"
+                        label="group by"
+                        csv="{{query.col}}"
+                        items="{{query.columns}}"
                         item-type="columns"></multi-select-menu>
-                    <paper-button on-tap="deleteGroup">
-                        <iron-icon icon="icons:delete"></iron-icon>
-                    </paper-button>
-                </div>
 
-                <!-- aggregators -->
-                <h3 class="query-label">Aggregation functions:</h3>
-                <div class="query-list">
-                    <template is="dom-repeat" items="{{group.aggregators}}" as="agg">
-                        <div class="query-list-item query-agg">
-                            <paper-dropdown-menu class="agg-op" label="operation" selected-item-label="{{agg.op}}">
-                                <paper-listbox class="dropdown-content">
-                                    <paper-item>sum</paper-item>
-                                    <paper-item>mean</paper-item>
-                                </paper-listbox>
-                            </paper-dropdown-menu>
-                            <div class="delete-row">
-                                <paper-dropdown-menu class="agg-col" label="column" selected-item-label="{{agg.col}}">
+                    <!-- aggregators -->
+                    <div class="agg-list">
+                        <template is="dom-repeat"
+                            items="{{query.aggregators}}" as="agg">
+                            <div class="query-agg">
+                                <paper-dropdown-menu
+                                    class="agg-op"
+                                    label="operation"
+                                    selected-item-label="{{agg.op}}">
                                     <paper-listbox class="dropdown-content">
-                                        <template is="dom-repeat" items="{{originalColumns}}" filter="filterItemsByNumberType">
-                                            <paper-item>{{item}}</paper-item>
-                                        </template>
+                                        <paper-item>sum</paper-item>
+                                        <paper-item>mean</paper-item>
                                     </paper-listbox>
                                 </paper-dropdown-menu>
+                                <div class="agg-delete-row">
+                                    <paper-dropdown-menu
+                                        class="agg-col"
+                                        label="column"
+                                        selected-item-label="{{agg.col}}">
+                                        <paper-listbox class="dropdown-content">
+                                            <template is="dom-repeat"
+                                                items="{{query.columns}}"
+                                                filter="{{filterItemsByNumberType(query.columns, query.columnTypes)}}">
+                                                <paper-item>{{item}}</paper-item>
+                                            </template>
+                                        </paper-listbox>
+                                    </paper-dropdown-menu>
 
-                                <paper-button on-tap="deleteAgg">
-                                    <iron-icon icon="icons:delete"></iron-icon>
-                                </paper-button>
+                                    <paper-icon-button
+                                        class="agg-remove-btn"
+                                        on-tap="removeAgg"
+                                        icon="clear"></paper-button>
+                                </div>
                             </div>
-                        </div>
-                    </template>
-                </div>
+                        </template>
+                    </div>
 
-                <paper-button class="add-agg" on-tap="addAgg">
-                    <iron-icon icon="icons:add"></iron-icon>
-                    Add aggregate function
-                </paper-button>
-            </div>
-        </template>
+                    <paper-button class="add-agg" on-tap="addAgg">
+                        <iron-icon icon="icons:add"></iron-icon>
+                        aggregation
+                    </paper-button>
+                </template>
 
-        <!-- Filters -->
-        <h3 class="query-label">Filters (matches all):</h3>
-        <div class="query-list">
-            <template is="dom-repeat" items="{{filters}}" as="filter">
-                <div class="query-list-item query-filter">
-                    <paper-dropdown-menu label="column" selected-item-label="{{filter.col}}">
+                <!-- filter -->
+                <template is="dom-if" if="{{query.filter}}">
+                    <paper-dropdown-menu label="filter column" selected-item-label="{{query.col}}">
                         <paper-listbox class="dropdown-content">
-                            <template is="dom-repeat" items="{{originalColumns}}">
+                            <template is="dom-repeat" items="{{query.columns}}">
                                 <paper-item>{{item}}</paper-item>
                             </template>
                         </paper-listbox>
                     </paper-dropdown-menu>
-                    <paper-dropdown-menu label="comparator">
-                        <paper-listbox class="dropdown-content" selected="{{filter.op}}" attr-for-selected="value">
-                            <template is="dom-repeat" items="{{filterOpSet(filter.col)}}">
+                    <paper-dropdown-menu label="to be">
+                        <paper-listbox
+                            class="dropdown-content"
+                            selected="{{query.op}}"
+                            attr-for-selected="value">
+                            <template is="dom-repeat"
+                                items="{{filterOpSet(query.col, query.columnTypes)}}">
                                 <paper-item value="{{item.op}}">{{item.desc}}</paper-item>
                             </template>
                         </paper-listbox>
                     </paper-dropdown-menu>
-                    <div class="delete-row">
-                        <paper-input label="value" value="{{filter.val}}"></paper-input>
-                        <paper-button class="delete-btn" on-tap="deleteFilter">
-                            <iron-icon icon="icons:delete"></iron-icon>
-                        </paper-button>
-                    </div>
-                </div>
-            </template>
-        </div>
-        <paper-button class="add-filter" on-tap="addFilter">
-            <iron-icon icon="icons:add"></iron-icon>
-            Add filter
-        </paper-button>
-
-        <!-- repeating query-group elements to be stamped as children of myDataframe -->
-        <template id="groups" is="dom-repeat" items="{{groups}}" as="group">
-            <urth-core-query-group by$="{{group.col}}" disabled="[[!group.col]]">
-                <template is="dom-repeat" items="{{group.aggregators}}" as="agg" observe="col op">
-                    <urth-core-query-agg op$="{{agg.op}}" col$="{{agg.col}}" disabled="[[!agg.col]]"></urth-core-query-agg>
+                    <paper-input
+                        label="value"
+                        value="{{query.val}}"></paper-input>
                 </template>
-            </urth-core-query-group>
         </template>
 
-        <!-- repeating query-filter elements to be stamped as children of myDataframe -->
-        <template id="filters" is="dom-repeat" items="{{filters}}" as="filter" filter="hasValue" observe="col op val">
-            <urth-core-query-filter disabled="[[!filter.val]]">{{filterExpression(filter.col, filter.op, filter.val)}}</urth-core-query-filter>
+        <div id="query-add-btns">
+            <paper-button on-tap="addGroup">
+                <iron-icon icon="icons:add"></iron-icon>
+                group-by
+            </paper-button>
+            <paper-button class="add-filter" on-tap="addFilter">
+                <iron-icon icon="icons:add"></iron-icon>
+                filter
+            </paper-button>
+        </div>
+
+        <!-- repeating query-group elements to be stamped as children of myDataframe -->
+        <template id="queries" is="dom-repeat" items="{{queries}}" as="query" filter="isValid">
+            <!-- group -->
+            <template is="dom-if" if="{{query.group}}">
+                <urth-core-query-group by="{{query.col}}">
+                    <template is="dom-repeat" items="{{query.aggregators}}" as="agg">
+                        <urth-core-query-agg
+                            op="{{agg.op}}"
+                            col="{{agg.col}}"
+                            disabled="{{!agg.col}}"></urth-core-query-agg>
+                    </template>
+                </urth-core-query-group>
+            </template>
+
+            <!-- filter -->
+            <template is="dom-if" if="{{query.filter}}">
+                <urth-core-query-filter>{{filterExpression(query.col, query.op, query.val)}}</urth-core-query-filter>
+            </template>
         </template>
 
         <!-- user declares dataframe here -->
@@ -179,25 +216,63 @@ Example:
     </template>
 </dom-module>
 <script>
-(function(){
+(function() {
     'use strict';
 
-    window.Urth = window.Urth || {};
+    var FILTERS = [
+        { op: '==', desc: 'equals'},
+        { op: '!=', desc: 'not equals'}
+    ];
+    var NUMERIC_FILTERS = FILTERS.concat([
+        { op: '<',  desc: 'less than'},
+        { op: '<=', desc: 'less than or equal'},
+        { op: '>',  desc: 'greater than'},
+        { op: '>=', desc: 'greater than or equal'}
+    ]);
 
+    window.Urth = window.Urth || {};
     window.Urth['urth-viz-query'] = Polymer({
         is: 'urth-viz-query',
 
         properties: {
-            // n-element array with shape to fit query form
-            filters: {
-                type: Array,
-                value: function() { return []; }
-            },
-
-            groups: {
+            // array of queries - either filters or groups
+            queries: {
                 type: Array,
                 value: function() { return []; }
             }
+        },
+
+        observers: [
+            '_queriesChanged(queries.*)'
+        ],
+
+        _queriesChanged: function(change) {
+            if (change.path !== 'queries.splices' &&
+                change.path !== 'queries.length') {
+                // TODO better way than manual template update
+                this.$.queries.render();
+            }
+        },
+
+        _newQuery: function(opts) {
+            return Object.assign({
+                col: null,
+                columns: this.columns,
+                columnTypes: this.columnTypes
+            }, opts);
+        },
+
+        addAgg: function(event) {
+            var i = this.getQueryIndex(event.currentTarget);
+            this.push('queries.'+i+'.aggregators', { op: null, col: null });
+        },
+
+        addFilter: function() {
+            this.push('queries', this._newQuery({ filter: true, op: null, val: null }));
+        },
+
+        addGroup: function() {
+            this.push('queries', this._newQuery({ group: true, aggregators: [] }));
         },
 
         filterExpression: function(col, op, val) {
@@ -207,83 +282,55 @@ Example:
             return col + ' ' + op + ' ' + val;
         },
 
-        filterOpSet: function(column) {
+        filterItemsByNumberType: function(columns, columnTypes) {
+            return function(item) {
+                return columnTypes[columns.indexOf(item)] === 'Number';
+            };
+        },
+
+        filterOpSet: function(column, columnTypes) {
             if (!column) { return []; }
+            var datatype = columnTypes[this.columns.indexOf(column)];
+            return datatype === 'Number' ? NUMERIC_FILTERS : FILTERS;
+        },
 
-            var datatype = this.originalColumnTypes[this.columns.indexOf(column)];
-            var set = [{op: '==', desc: 'equals'}, {op: '!=', desc: 'not equals'}];
-
-            //TODO: contain? does not contain? possible with query?
-            if (datatype === 'Number') {
-                set.push(
-                    {op: '<', desc: 'less than'},
-                    {op: '<=', desc: 'less than or equal'},
-                    {op: '>', desc: 'greater than'},
-                    {op: '>=', desc: 'greater than or equal'}
-                );
+        getQueryIndex: function(node) {
+            while (node.parentElement &&
+                   !node.dataset.hasOwnProperty('queryIndex')) {
+                node = node.parentElement;
             }
-            return set;
+            return node.dataset.queryIndex;
         },
 
-        filterItemsByNumberType: function(item) {
-            return this.columnTypes[this.columns.indexOf(item)] == 'Number';
+        isValid: function(query) {
+            if (query.filter) {
+                return query.col && query.op && query.val;
+            } else {
+                return query.col;
+            }
         },
 
-        hasValue: function(filter) {
-            return filter.val !== null && filter.val !== '';
+        removeAgg: function(event) {
+            var i = this.getQueryIndex(event.currentTarget);
+            this.splice('queries.'+i+'.aggregators', event.model.index, 1);
         },
 
-        addFilter: function(event) {
-            this.push('filters', { col: null, op: null, val: null });
-        },
-
-        addGroup: function(event) {
-            this.push('groups', { col: null, aggregators: [] });
-        },
-
-        addAgg: function(event) {
-            this.push('groups.0.aggregators', { op: null, col: null });
-        },
-
-        deleteFilter: function(event) {
-            this.splice('filters', event.model.index, 1);
-        },
-
-        deleteGroup: function(event) {
-            this.splice('groups', event.model.index, 1);
-        },
-
-        deleteAgg: function(event) {
-            this.splice('groups.0.aggregators', event.model.index, 1);
+        removeQuery: function(event) {
+            this.splice('queries', event.model['query-index'], 1);
+            this.splice('columns', event.model['query-index'], 1);
         },
 
         ready: function() {
             // move filters template to user-supplied urth-core-dataframe in light DOM
             var dataframe = this.$.myDataframe.getDistributedNodes()[0];
-            dataframe.appendChild(this.$.filters.root);
-            dataframe.appendChild(this.$.groups.root);
+            dataframe.appendChild(this.$.queries.root);
 
-            this.columns = dataframe.columns;
-
-            // Keep track of dataframe columns prior to group operation
-            this.originalColumns = this.columns;
-
-            dataframe.addEventListener('columns-changed', function(event) {
+            dataframe.addEventListener('columns-changed', function() {
                 this.columns = dataframe.columns;
-
-                if (!this.groups || !this.groups.length || !this.groups[0].col) {
-                    // Only update if this is not a group operation
-                    this.originalColumns = this.columns;
-                }
             }.bind(this));
 
-            dataframe.addEventListener('column-types-changed', function(event) {
+            dataframe.addEventListener('column-types-changed', function() {
                 this.columnTypes = dataframe.columnTypes;
-
-                if (!this.groups || !this.groups.length || !this.groups[0].col) {
-                    // Only update if this is not a group operation
-                    this.originalColumnTypes = this.columnTypes;
-                }
             }.bind(this));
         }
     });
