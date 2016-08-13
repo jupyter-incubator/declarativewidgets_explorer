@@ -171,9 +171,9 @@ Example:
         </div>
 
         <!-- controls section -->
-        <iron-collapse id="viz-explorer-controls" horizontal="true" opened="true">
+        <iron-collapse id="viz-explorer-controls" horizontal="true" opened="{{_controlsOpened}}">
             <!-- select viz type -->
-            <paper-card-collapse class="viz-explorer-controls-section" heading="Viz">
+            <paper-card-collapse class="viz-explorer-controls-section" heading="Viz" opened="{{_cardsOpened.viz}}">
                 <paper-dropdown-menu label="Viz type">
                     <paper-listbox class="dropdown-content" attr-for-selected="name" selected="{{type}}">
                         <paper-item name="table">Table</paper-item>
@@ -188,7 +188,7 @@ Example:
 
             <!-- select viz properties -->
             <template is="dom-if" if="[[!showAsTable]]">
-                <paper-card-collapse class="viz-explorer-controls-section" heading="Viz Options">
+                <paper-card-collapse class="viz-explorer-controls-section" heading="Viz Options" opened="{{_cardsOpened.options}}">
                     <template is="dom-repeat" items="{{options}}" as="option">
                         <paper-dropdown-menu label="{{option.label}}" selected-item-label="{{option.column}}">
                             <paper-listbox class="dropdown-content" selected="{{option.index}}">
@@ -202,7 +202,7 @@ Example:
             </template>
 
             <!-- dataframe query -->
-            <paper-card-collapse class="viz-explorer-controls-section" heading="Query">
+            <paper-card-collapse class="viz-explorer-controls-section" heading="Query" opened="{{_cardsOpened.query}}">
                 <content select="urth-viz-query"></content>
             </paper-card-collapse>
         </iron-collapse>
@@ -339,11 +339,36 @@ Example:
                 }
             },
 
+            /**
+             * Keep track of state of top collapse element
+             */
+            _controlsOpened: {
+                type: Boolean,
+                observer: '_controlsOpenedChanged',
+                serialize: true,
+                value: true
+            },
+
+            /**
+             * Keep track of state of various collapse elements
+             */
+            _cardsOpened: {
+                type: Array,
+                serialize: true,
+                value: function() {
+                    return {
+                        viz: true,
+                        options: true,
+                        query: true
+                    };
+                }
+            },
+
             _dfReady: Boolean
         },
 
         observers: [
-            'saveState(type,limit,xOption,yOption)',
+            'saveState(type,limit,xOption,yOption,_controlsOpened,_cardsOpened.*)',
             '_specChanged(spec.encoding.*)',
             '_pickOptions(type, _dfReady)',
             '_optionsChanged(options.*)'
@@ -578,9 +603,10 @@ Example:
 
         _toggleCollapse: function() {
             this.$['viz-explorer-controls'].toggle();
-            var collapseBtn = this.$['controls-collapse-btn'];
-            var transform = collapseBtn.style.transform;
-            collapseBtn.style.transform = transform === 'rotateY(180deg)' ? 'rotateY(0deg)' : 'rotateY(180deg)';
+        },
+
+        _controlsOpenedChanged: function(opened) {
+            this.$['controls-collapse-btn'].style.transform = 'rotateY(' + (opened ? 0 : 180) + 'deg)';
         },
 
         ready: function() {

@@ -50,10 +50,10 @@ Collapsing will hide the content but keep the header
         <paper-header-panel mode="seamed" class="flex">
             <paper-toolbar>
                 <span class="title" style="font-size: 14px; margin-left: 0;">{{heading}}</span>
-                <paper-icon-button id="collapse-btn" icon="remove" title="Expand" on-tap="toggle"></paper-icon-button>
+                <paper-icon-button icon="{{_icon(opened)}}" title="{{_title(opened)}}" on-tap="toggle"></paper-icon-button>
             </paper-toolbar>
             <div>
-                <iron-collapse id="collapse" class="card-content" opened="true">
+                <iron-collapse id="collapse" class="card-content" opened="{{opened}}">
                     <div id="collapse-padding">
                         <content></content>
                     </div>
@@ -66,20 +66,30 @@ Collapsing will hide the content but keep the header
         'use strict';
         Polymer({
             is: 'paper-card-collapse',
+
             properties: {
                 heading: {
                     type: String,
                     value: ''
+                },
+
+                opened: {
+                    type: Boolean,
+                    value: true,
+                    notify: true
                 }
             },
-            ready: function() {
 
+            _icon: function(opened) {
+                return opened ? 'remove' : 'add';
             },
+
+            _title: function(opened) {
+                return opened ? 'collapse' : 'expand';
+            },
+
             toggle: function() {
                 this.$.collapse.toggle();
-                var collapseBtn = this.$$('#collapse-btn');
-                var currentIcon = collapseBtn.getAttribute('icon');
-                collapseBtn.setAttribute('icon', currentIcon === 'add' ? 'remove' : 'add');
             }
         });
     })();
