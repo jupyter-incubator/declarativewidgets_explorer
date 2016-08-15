@@ -11,7 +11,7 @@
 <link rel="import" href="../paper-input/paper-input.html">
 <link rel="import" href="../iron-icon/iron-icon.html">
 <link rel="import" href="multi-select-menu.html">
-<link rel="import" href="serialize-behavior.html">
+<link rel="import" href="persist-behavior.html">
 
 <!--
 This element represents a query executed against an urth-core-dataframe element.
@@ -192,13 +192,13 @@ Example:
             // n-element array with shape to fit query form
             filters: {
                 type: Array,
-                serialize: true,
+                persist: true,
                 value: function() { return []; }
             },
 
             groups: {
                 type: Array,
-                serialize: true,
+                persist: true,
                 value: function() { return []; }
             },
 
@@ -210,7 +210,7 @@ Example:
         ],
 
         behaviors: [
-            Urth.SerializeBehavior,
+            Urth.PersistBehavior,
         ],
 
         filterExpression: function(col, op, val) {

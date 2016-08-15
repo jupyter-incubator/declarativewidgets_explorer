@@ -7,7 +7,7 @@
 <link rel="import" href="../urth-core-behaviors/error-display-behavior.html">
 <link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../urth-viz-behaviors/urth-viz-selection-behavior.html">
-<link rel="import" href="serialize-behavior.html">
+<link rel="import" href="persist-behavior.html">
 
 <link rel="import" href="../iron-collapse/iron-collapse.html">
 <link rel="import" href="../paper-dialog/paper-dialog.html">
@@ -263,7 +263,7 @@ Example:
             type: {
                 type: String,
                 value: 'bar',
-                serialize: true,
+                persist: true,
                 observer: '_typeChanged'
             },
 
@@ -273,7 +273,7 @@ Example:
             limit: {
                 type: Number,
                 notify: true,
-                serialize: true,
+                persist: true,
                 value: 20
             },
 
@@ -301,6 +301,7 @@ Example:
              */
             options: {
                 type: Array,
+                persist: true,
                 value: function() { return []; }
             },
 
@@ -310,7 +311,6 @@ Example:
              */
             xOption: {
                 type: Object,
-//                serialize: true,
                 value: function() { return { prop: 'x', label: 'x axis' }; }
             },
 
@@ -320,7 +320,6 @@ Example:
              */
             yOption: {
                 type: Object,
-//                serialize: true,
                 value: function() { return { prop: 'y', label: 'y axis' }; }
             },
 
@@ -345,7 +344,7 @@ Example:
             _controlsOpened: {
                 type: Boolean,
                 observer: '_controlsOpenedChanged',
-                serialize: true,
+                persist: true,
                 value: true
             },
 
@@ -354,7 +353,7 @@ Example:
              */
             _cardsOpened: {
                 type: Array,
-                serialize: true,
+                persist: true,
                 value: function() {
                     return {
                         viz: true,
@@ -368,15 +367,15 @@ Example:
         },
 
         observers: [
-            'saveState(type,limit,xOption,yOption,_controlsOpened,_cardsOpened.*)',
-            '_specChanged(spec.encoding.*)',
+            'saveState(type,limit,options,_controlsOpened,_cardsOpened.*)',
+            '_specChanged(spec.encoding.*, _dfReady)',
             '_pickOptions(type, _dfReady)',
-            '_optionsChanged(options.*)'
+            '_optionsChanged(options.*, _dfReady)'
         ],
 
         behaviors: [
             Polymer.IronResizableBehavior,
-            Urth.SerializeBehavior,
+            Urth.PersistBehavior,
             Urth.DisplayErrorBehavior,
             Urth.VizSelectionBehavior
         ],
@@ -419,7 +418,9 @@ Example:
             }
         },
 
-        _specChanged: function(changeRecord) {
+        _specChanged: function(changeRecord, ready) {
+            if (!ready) { return; }
+
             var channelMatch = changeRecord.path.match(/^spec.encoding.([^.]+).field$/)
             if (channelMatch) {
                 var type = this._columnType(this.df.columnTypes[this.df.columns.indexOf(changeRecord.value)]),
@@ -448,18 +449,21 @@ Example:
             }
         },
 
-        _optionsChanged: function(changeRecord) {
-            if (!changeRecord) return;
+        _optionsChanged: function(changeRecord, ready) {
+            if (!changeRecord || !ready) return;
 
             if (changeRecord.path === 'options.splices') {
                 changeRecord.value.indexSplices.forEach(function(s) {
                     s.removed.forEach(function(option) { delete this.spec.encoding[option.prop]; }, this);
                     for (var i = 0; i < s.addedCount; i++) {
-                        var option = s.object[s.index + i], channel = option.prop,
-                            type = this._columnType(this.df.columnTypes[this.df.columns.indexOf(option.column)]);
-                        this.spec.encoding[channel] = this.spec.encoding[channel] || {};
-                        this.set('spec.encoding.' + channel + '.field', option.column);
-                        this.set('spec.encoding.' + channel + '.type', type);
+                        var option = s.object[s.index + i];
+                        if (option.column) {
+                            var channel = option.prop,
+                                type = this._columnType(this.df.columnTypes[this.df.columns.indexOf(option.column)]);
+                            this.spec.encoding[channel] = this.spec.encoding[channel] || {};
+                            this.set('spec.encoding.' + channel + '.field', option.column);
+                            this.set('spec.encoding.' + channel + '.type', type);
+                        }
                     }
                 }, this);
 
