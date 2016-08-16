@@ -149,7 +149,7 @@ Example:
                     value="{{df}}"
                     row-as-object="true"
                     on-rows-changed="_rowsChanged"
-                    on-columns-changed="_selectDefaults"
+                    on-columns-changed="_columnsChanged"
                     on-value-changed="_dataChanged">
                 </urth-core-dataframe>
             </urth-viz-query>
@@ -363,6 +363,10 @@ Example:
                 }
             },
 
+            /**
+             * Both rows and columns are ready on the dataframe
+             * @private
+             */
             _dfReady: Boolean
         },
 
@@ -409,7 +413,6 @@ Example:
 
         _dataChanged: function(event) {
             this.df = event.detail.value;
-            this.set('_dfReady', true);
         },
 
         _typeChanged: function(newType) {
@@ -439,14 +442,24 @@ Example:
         _pickOptions: function(newType, ready) {
             if (!ready) { return; }
 
+            var options = this.options;
+
             // clear out any fields in the spec from previous type
             this.set('spec.encoding', {});
             this.set('options', []);
 
-            // rebuild options and corresponding spec
-            if (this._optionsMap) {
-                this._optionsMap[newType].forEach(function(option) { this.push('options', option); }, this);
+            if (this._initialTypeSetup) {
+                // one time flag, when type and options information was restored with PersistBehavior
+                // refresh with those same options
+                delete this._initialTypeSetup;
+            } else {
+                // Reset to default options based on type chosen
+                options = (this._optionsMap || {})[newType];
             }
+
+            // rebuild options and corresponding spec
+            //TODO: should use this.splice to add and remove in one step
+            options.forEach(function(option) { this.push('options', option); }, this);
         },
 
         _optionsChanged: function(changeRecord, ready) {
@@ -523,15 +536,18 @@ Example:
             }.bind(this) : null;
         },
 
-        _selectDefaults: function(event) {
+        _columnsChanged: function(event) {
             var dataframe = event.target,
                 types = dataframe.value.columnTypes.map(function(datatype) { return this._columnType(datatype); }, this);
 
             // in case value-changed hasn't fired yet, this.df will be needed by observers
             this.df = dataframe.value;
-            this.set('_dfReady', true);
+            this._columnsChangedCalled = true;
 
-            // regenerate both dropdown label based on latest listbox items where current selection is no longer valid
+            if (this._rowsChangedCalled) { this.set('_dfReady', true); }
+
+            // select default settings and regenerate both dropdown label based on latest listbox items
+            // where current selection is no longer valid
 
             var independentOption, dependentOption;
 
@@ -583,6 +599,8 @@ Example:
             });
 
             this.set('spec.data', { values: values });
+
+            if (this._columnsChangedCalled) { this.set('_dfReady', true); }
         },
 
         _selectionIndexChanged: function() {
@@ -655,7 +673,7 @@ Example:
                     dataframe.limit = this.limit;
                     dataframe.addEventListener('value-changed', this._dataChanged.bind(this));
                     dataframe.addEventListener('columns-changed', function (event) {
-                        this.async(this._selectDefaults.bind(this, event));
+                        this.async(this._columnsChanged.bind(this, event));
                     }.bind(this));
                     dataframe.addEventListener('rows-changed', function(event) {
                         this.async(this._rowsChanged.bind(this, event));
@@ -673,7 +691,9 @@ Example:
         },
 
         attached: function() {
+            var originalType = this.type;
             this.restoreState();
+            if (this.type !== originalType) { this._initialTypeSetup = true; }
         }
     });
 
