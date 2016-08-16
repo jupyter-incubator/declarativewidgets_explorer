@@ -65,12 +65,13 @@ Collapsing will hide the content but keep the header
                 </paper-input>
             </div>
             <div class="dropdown-content">
-                <paper-input id="filter" label="Filter the [[itemType]]" value="{{filter}}" tabindex="0"></paper-input>
+                <paper-input id="filter" label="Filter the [[itemType]]"
+                    value="{{filter}}" tabindex="0"></paper-input>
                 <paper-menu
                     id="items"
                     multi
-                    on-iron-select="_updateSelectedItems"
-                    on-iron-deselect="_updateSelectedItems">
+                    on-iron-select="_updateSelectedValues"
+                    on-iron-deselect="_updateSelectedValues">
                     <template is="dom-repeat" items="{{filteredItems}}" as="item">
                         <paper-item class="list-item">
                             <iron-icon icon="check"></iron-icon>[[item]]</paper-item>
@@ -114,26 +115,48 @@ Collapsing will hide the content but keep the header
                     type: String,
                     value: 'multi-select'
                 },
-                // selected items
-                selectedItems: {
+                // gets and sets the selected values
+                selected: {
                     type: Array,
                     value: function() {
                         return [];
                     },
-                    readOnly: true
+                    notify: true
                 },
-                // selected items text, is value if 1 item selected, else is count
+                // selected text is value if 1 item selected, else is count
                 selectedText: {
                     type: String,
                     value: '',
                     readOnly: true
-                },
-                // selected text in CSV format
-                csv: {
-                    type: String,
-                    value: '',
-                    readOnly: true,
-                    notify: true
+                }
+            },
+            observers: [
+                '_updateSelection(selected.*,items.*)'
+            ],
+            _updateSelection: function() {
+                // set selected items
+                if (!this._noUpdate) {
+                    var currentlySelectedIndices = this.$.items.selectedValues || [];
+                    var selectedIndices = (this.selected || []).map(function(item) {
+                        return this.items.indexOf(item);
+                    }, this);
+
+                    // deselect currently selected indices that are not selected
+                    currentlySelectedIndices =
+                        currentlySelectedIndices.filter(function(i) {
+                            if (selectedIndices.indexOf(i) < 0) {
+                                this.$.items.selectIndex(i);
+                            } else {
+                                return true;
+                            }
+                        }, this);
+
+                    // select selected indices that aren't currently selected
+                    selectedIndices.forEach(function(i) {
+                        if (currentlySelectedIndices.indexOf(i) < 0) {
+                            this.$.items.selectIndex(i);
+                        }
+                    }, this);
                 }
             },
             _clearFilter: function() {
@@ -153,37 +176,32 @@ Collapsing will hide the content but keep the header
                     return items;
                 }
             },
-            _deselect: function(event) {
-                console.log('deselect');
-            },
             _focusFilter: function() {
                 // use timeout so menu is open and filter input can be focused
                 window.setTimeout(function() {
                     this.$.filter.focus();
                 }.bind(this), 250);
             },
-            _updateSelectedItems: function() {
-                // get selected items based on menu item selections
-                var elements = this.$.items.querySelectorAll('paper-item');
-                var selectedItems = [];
-                for (var i = 0; i < elements.length; i++) {
-                    if (elements[i].classList.contains('iron-selected')) {
-                        selectedItems.push(this.items[i]);
-                    }
-                }
-                this._setSelectedItems(selectedItems);
+            _updateSelectedValues: function() {
+                // get selected values based on menu item selections
+                var selectedIndices = this.$.items.selectedValues || [];
+                var selectedValues = selectedIndices.map(function(index) {
+                    return this.items[index];
+                }, this);
+
+                // set selected items without triggering the observer
+                this._noUpdate = true;
+                this.set('selected', selectedValues);
+                this._noUpdate = false;
 
                 // set selection label based on how many items are selected
-                if (this.selectedItems.length === 0) {
+                if (this.selected.length === 0) {
                     this._setSelectedText('');
-                } else if (this.selectedItems.length === 1) {
-                    this._setSelectedText(this.selectedItems[0]);
+                } else if (this.selected.length === 1) {
+                    this._setSelectedText(this.selected[0]);
                 } else {
-                    this._setSelectedText(this.selectedItems.length + ' ' + this.itemType);
+                    this._setSelectedText(this.selected.length + ' ' + this.itemType);
                 }
-
-                // set CSV value
-                this._setCsv(this.selectedItems.join(','));
             }
         });
     })();
