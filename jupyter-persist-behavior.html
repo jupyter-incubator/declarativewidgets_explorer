@@ -30,10 +30,9 @@
          * All properties marked `persist:true` are saved in metadata that persists with the notebook cell.
          * Only works for widgets which are children of a Jupyter notebook cell.  Will not work in the shadow DOM.
          *
-         * @group Urth Viz
-         * @polymerBehavior Urth.PersistBehavior
+         * @polymerBehavior Urth.JupyterPersistBehavior
          */
-        Urth.PersistBehavior = {
+        Urth.JupyterPersistBehavior = {
             /**
              * Iterate through properties, collect state of those marked `persist` and put result in cell metadata.
              * If not attached to document DOM as a child of a Jupyter notebook cell, or restoreState has not yet

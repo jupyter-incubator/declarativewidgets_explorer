@@ -11,7 +11,7 @@
 <link rel="import" href="../paper-input/paper-input.html">
 <link rel="import" href="../iron-icon/iron-icon.html">
 <link rel="import" href="multi-select-menu.html">
-<link rel="import" href="persist-behavior.html">
+<link rel="import" href="jupyter-persist-behavior.html">
 
 <!--
 This element represents a query executed against an urth-core-dataframe element.
@@ -210,7 +210,7 @@ Example:
         ],
 
         behaviors: [
-            Urth.PersistBehavior,
+            Urth.JupyterPersistBehavior,
         ],
 
         filterExpression: function(col, op, val) {
