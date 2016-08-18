@@ -67,16 +67,21 @@ Example:
             },
 
             _specChanged: function(newSpec) {
-                if (!this.isReady) { return; }
+                if (!this.view) { return; }
 
                 this.render();
             },
 
             _resize: function() {
-                if (!this.view) { return; }
+                if (!this.view || !this.spec) { return; }
 
-                // TODO
-                this.view.update();
+                // spec width/height represent plot area, not total canvas.  Use fudge factor, for now,
+                // to account for labels, axes
+                var style = window.getComputedStyle(this.parentNode),
+                    width = Math.max(200, parseInt(style.width) - 150),
+                    height = Math.max(200, parseInt(style.height) - 150);
+//                this.view.width(width).height(height).update();
+                this.spec.width = width; this.spec.height = height; this.render();
             },
 
             created: function() {
@@ -129,14 +134,20 @@ Example:
                 }
             },
 
-            ready: function() {
+            attached: function() {
                 var display = window.getComputedStyle(this).display;
                 if (display === 'none' || document.readyState !== 'complete') {
-                    this.async(this.ready, 200);
+                    this.async(this.attached, 200);
                     return;
                 }
 
-                this.isReady = true;
+                var style = window.getComputedStyle(this.$.container),
+                    width = parseInt(style.width) || 200,
+                    height = parseInt(style.height) || 200;
+
+                this.spec.width = Math.max(200, parseInt(style.width) - 150);
+                this.spec.height = Math.max(200, parseInt(style.height) - 150);
+
                 this.render();
             },
 
