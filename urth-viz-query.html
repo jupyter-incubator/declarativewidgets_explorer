@@ -85,7 +85,7 @@ Example:
                 <div class="delete-row">
                     <multi-select-menu
                         label="Group By"
-                        csv="{{group.col}}"
+                        selected="{{group.col}}"
                         items="{{originalColumns}}"
                         item-type="columns"></multi-select-menu>
                     <paper-button on-tap="deleteGroup">
@@ -163,7 +163,7 @@ Example:
 
         <!-- repeating query-group elements to be stamped as children of myDataframe -->
         <template id="groups" is="dom-repeat" items="{{groups}}" as="group">
-            <urth-core-query-group by$="{{group.col}}" disabled="[[!group.col]]">
+            <urth-core-query-group by$="{{_arrayToString(group.col)}}" disabled="[[!group.col]]">
                 <template is="dom-repeat" items="{{group.aggregators}}" as="agg" observe="col op">
                     <urth-core-query-agg op$="{{agg.op}}" col$="{{agg.col}}" disabled="[[!agg.col]]"></urth-core-query-agg>
                 </template>
@@ -270,6 +270,10 @@ Example:
             this.splice('groups.0.aggregators', event.model.index, 1);
         },
 
+        _arrayToString: function(arr) {
+            return (arr || []).join(',');
+        },
+
         ready: function() {
             // move filters template to user-supplied urth-core-dataframe in light DOM
             var dataframe = this.$.myDataframe.getDistributedNodes()[0];
@@ -285,23 +289,23 @@ Example:
             dataframe.addEventListener('columns-changed', function(event) {
                 this.columns = dataframe.columns;
 
-                if (!this.groups || !this.groups.length || !this.groups[0].col) {
+                if (!this._dfReady || !this.groups || !this.groups.length || !this.groups[0].col || !this.groups[0].col.length) {
                     // Only update if this is not a group operation
                     this.originalColumns = this.columns;
                 }
 
-                this.set('_dfReady', dataframe.columns && dataframe.columnTypes);
+                this.set('_dfReady', this._dfReady || (dataframe.columns && dataframe.columnTypes));
             }.bind(this));
 
             dataframe.addEventListener('column-types-changed', function(event) {
                 this.columnTypes = dataframe.columnTypes;
 
-                if (!this.groups || !this.groups.length || !this.groups[0].col) {
+                if (!this._dfReady || !this.groups || !this.groups.length || !this.groups[0].col || !this.groups[0].col.length) {
                     // Only update if this is not a group operation
                     this.originalColumnTypes = this.columnTypes;
                 }
 
-                this.set('_dfReady', dataframe.columns && dataframe.columnTypes);
+                this.set('_dfReady', this._dfReady || (dataframe.columns && dataframe.columnTypes));
             }.bind(this));
         },
 
