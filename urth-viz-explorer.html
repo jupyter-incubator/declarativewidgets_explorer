@@ -117,12 +117,19 @@ Example:
                 -webkit-flex-direction: row;
                 flex-direction: row;
 
+                --paper-card-collapse-padding: 1em;
                 --paper-item-min-height: 24px;
                 --paper-item: {
                     font-size: 14px;
                 };
+                --paper-font-subhead: {
+                    font-size: 14px;
+                    font-weight: 400;
+                    line-height: 20px;
+                    -webkit-font-smoothing: antialiased;
+                };
                 --paper-input-container: {
-                    padding: 4px 0;
+                    padding: 0;
                 };
                 --paper-input-container-input: {
                     font-size: 14px;
@@ -138,6 +145,10 @@ Example:
                     padding-left: 1em;
                     padding-right: 1em;
                 };
+            }
+
+            :host #query-card {
+                --paper-card-collapse-padding: 0;
             }
         </style>
 
@@ -202,7 +213,7 @@ Example:
             </template>
 
             <!-- dataframe query -->
-            <paper-card-collapse class="viz-explorer-controls-section" heading="Query" opened="{{_cardsOpened.query}}">
+            <paper-card-collapse id="query-card" class="viz-explorer-controls-section" heading="Query" opened="{{_cardsOpened.query}}">
                 <content select="urth-viz-query"></content>
             </paper-card-collapse>
         </iron-collapse>
