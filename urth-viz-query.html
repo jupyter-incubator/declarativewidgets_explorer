@@ -192,7 +192,7 @@ Example:
         <template id="queries" is="dom-repeat" items="{{queries}}" as="query" filter="_isQueryValid" observe="col op val">
             <!-- group -->
             <template is="dom-if" if="{{query.group}}">
-                <urth-core-query-group by$="{{_arrayToString(query.col)}}">
+                <urth-core-query-group by="{{_arrayToString(query.col)}}">
                     <template is="dom-repeat" items="{{query.aggregators}}" as="agg">
                         <urth-core-query-agg
                             op="{{agg.op}}"
@@ -227,6 +227,14 @@ Example:
         { op: '>=', desc: 'greater than or equal'}
     ]);
 
+    function getQueryIndex(node) {
+        while (node.parentElement &&
+               !node.dataset.hasOwnProperty('queryIndex')) {
+            node = node.parentElement;
+        }
+        return node.dataset.queryIndex;
+    }
+
     window.Urth = window.Urth || {};
     window.Urth['urth-viz-query'] = Polymer({
         is: 'urth-viz-query',
@@ -259,7 +267,7 @@ Example:
         },
 
         _addAgg: function(event) {
-            var i = this._getQueryIndex(event.currentTarget);
+            var i = getQueryIndex(event.currentTarget);
             this.push('queries.'+i+'.aggregators', { op: null, col: null });
         },
 
@@ -290,14 +298,6 @@ Example:
             return datatype === 'Number' ? NUMERIC_FILTERS : FILTERS;
         },
 
-        _getQueryIndex: function(node) {
-            while (node.parentElement &&
-                   !node.dataset.hasOwnProperty('queryIndex')) {
-                node = node.parentElement;
-            }
-            return node.dataset.queryIndex;
-        },
-
         _isQueryValid: function(query) {
             if (query.filter) {
                 return query.col && query.op && query.val;
@@ -307,7 +307,7 @@ Example:
         },
 
         _removeAgg: function(event) {
-            var i = this._getQueryIndex(event.currentTarget);
+            var i = getQueryIndex(event.currentTarget);
             this.splice('queries.'+i+'.aggregators', event.model.index, 1);
         },
 
