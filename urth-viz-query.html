@@ -101,7 +101,7 @@ Example:
             <div class="query-item" data-query-index$="{{query-index}}">
                 <paper-icon-button
                     class="query-remove-btn"
-                    on-tap="removeQuery"
+                    on-tap="_removeQuery"
                     icon="clear"></paper-icon-button>
 
                 <!-- group -->
@@ -130,7 +130,7 @@ Example:
                                         <paper-listbox class="dropdown-content" selected="{{agg.col}}" attr-for-selected="value">
                                             <template is="dom-repeat"
                                                 items="{{query.columns}}"
-                                                filter="{{filterItemsByNumberType(query.columns, query.columnTypes)}}">
+                                                filter="{{_filterItemsByNumberType(query.columns, query.columnTypes)}}">
                                                 <paper-item value="{{item}}">{{item}}</paper-item>
                                             </template>
                                         </paper-listbox>
@@ -138,14 +138,14 @@ Example:
 
                                     <paper-icon-button
                                         class="agg-remove-btn"
-                                        on-tap="removeAgg"
+                                        on-tap="_removeAgg"
                                         icon="clear"></paper-button>
                                 </div>
                             </div>
                         </template>
                     </div>
 
-                    <paper-button class="add-agg" on-tap="addAgg">
+                    <paper-button class="add-agg" on-tap="_addAgg">
                         <iron-icon icon="icons:add"></iron-icon>
                         aggregation
                     </paper-button>
@@ -166,7 +166,7 @@ Example:
                             selected="{{query.op}}"
                             attr-for-selected="value">
                             <template is="dom-repeat"
-                                items="{{filterOpSet(query.col, query.columnTypes, _dfReady)}}">
+                                items="{{_filterOpSet(query.col, query.columnTypes, _dfReady)}}">
                                 <paper-item value="{{item.op}}">{{item.desc}}</paper-item>
                             </template>
                         </paper-listbox>
@@ -178,18 +178,18 @@ Example:
         </template>
 
         <div id="query-add-btns">
-            <paper-button on-tap="addGroup">
+            <paper-button on-tap="_addGroup">
                 <iron-icon icon="icons:add"></iron-icon>
                 group-by
             </paper-button>
-            <paper-button class="add-filter" on-tap="addFilter">
+            <paper-button class="add-filter" on-tap="_addFilter">
                 <iron-icon icon="icons:add"></iron-icon>
                 filter
             </paper-button>
         </div>
 
         <!-- repeating query-group elements to be stamped as children of myDataframe -->
-        <template id="queries" is="dom-repeat" items="{{queries}}" as="query" filter="isValid">
+        <template id="queries" is="dom-repeat" items="{{queries}}" as="query" filter="_isQueryValid" observe="col op val">
             <!-- group -->
             <template is="dom-if" if="{{query.group}}">
                 <urth-core-query-group by$="{{_arrayToString(query.col)}}">
@@ -204,7 +204,7 @@ Example:
 
             <!-- filter -->
             <template is="dom-if" if="{{query.filter}}">
-                <urth-core-query-filter>{{filterExpression(query.col, query.op, query.val)}}</urth-core-query-filter>
+                <urth-core-query-filter>{{_filterExpression(query.col, query.op, query.val)}}</urth-core-query-filter>
             </template>
         </template>
 
@@ -243,21 +243,12 @@ Example:
         },
 
         observers: [
-            'saveState(queries.*)',
-            '_queriesChanged(queries.*)'
+            'saveState(queries.*)'
         ],
 
         behaviors: [
             Urth.JupyterPersistBehavior,
         ],
-
-        _queriesChanged: function(change) {
-            if (change.path !== 'queries.splices' &&
-                change.path !== 'queries.length') {
-                // TODO better way than manual template update
-                this.$.queries.render();
-            }
-        },
 
         _newQuery: function(opts) {
             return Object.assign({
@@ -267,39 +258,39 @@ Example:
             }, opts);
         },
 
-        addAgg: function(event) {
-            var i = this.getQueryIndex(event.currentTarget);
+        _addAgg: function(event) {
+            var i = this._getQueryIndex(event.currentTarget);
             this.push('queries.'+i+'.aggregators', { op: null, col: null });
         },
 
-        addFilter: function() {
+        _addFilter: function() {
             this.push('queries', this._newQuery({ filter: true, op: null, val: null }));
         },
 
-        addGroup: function() {
+        _addGroup: function() {
             this.push('queries', this._newQuery({ group: true, aggregators: [] }));
         },
 
-        filterExpression: function(col, op, val) {
+        _filterExpression: function(col, op, val) {
             if (Number.isNaN(+val)) {
                 val = "'" + val + "'";
             }
             return col + ' ' + op + ' ' + val;
         },
 
-        filterItemsByNumberType: function(columns, columnTypes) {
+        _filterItemsByNumberType: function(columns, columnTypes) {
             return function(item) {
                 return columnTypes[columns.indexOf(item)] === 'Number';
             };
         },
 
-        filterOpSet: function(column, columnTypes, ready) {
+        _filterOpSet: function(column, columnTypes, ready) {
             if (!column || !ready) { return []; }
             var datatype = columnTypes[this.columns.indexOf(column)];
             return datatype === 'Number' ? NUMERIC_FILTERS : FILTERS;
         },
 
-        getQueryIndex: function(node) {
+        _getQueryIndex: function(node) {
             while (node.parentElement &&
                    !node.dataset.hasOwnProperty('queryIndex')) {
                 node = node.parentElement;
@@ -307,7 +298,7 @@ Example:
             return node.dataset.queryIndex;
         },
 
-        isValid: function(query) {
+        _isQueryValid: function(query) {
             if (query.filter) {
                 return query.col && query.op && query.val;
             } else {
@@ -315,12 +306,12 @@ Example:
             }
         },
 
-        removeAgg: function(event) {
-            var i = this.getQueryIndex(event.currentTarget);
+        _removeAgg: function(event) {
+            var i = this._getQueryIndex(event.currentTarget);
             this.splice('queries.'+i+'.aggregators', event.model.index, 1);
         },
 
-        removeQuery: function(event) {
+        _removeQuery: function(event) {
             this.splice('queries', event.model['query-index'], 1);
             this.splice('columns', event.model['query-index'], 1);
         },
