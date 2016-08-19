@@ -1,8 +1,15 @@
 {
   "name": "declarativewidgets-explorer",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Represents a widget that uses visualizations to explore an urth-core-dataframe",
   "main": "urth-viz-explorer.html",
+  "authors": [
+    "Jupyter Community"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/jupyter-incubator/declarativewidgets_explorer"
+  },
   "keywords": [
     "urth",
     "visualization",
