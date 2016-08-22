@@ -27,9 +27,39 @@
 <!--
 Represents a widget that lets the user choose between a set of visualizations for a given dataframe.
 
-Example:
+Examples:
+
+An `urth-core-dataframe` may be given as a child element, inside an `urth-viz-query` to provide widgets to execute a query
+against that data:
+
+    <urth-viz-explorer selection-as-object>
+      <urth-viz-query>
+        <urth-core-dataframe ref="aDataFrame"></urth-core-dataframe>
+      </urth-viz-query>
+    </urth-viz-explorer>
+
+or the dataframe may be specified with the `ref` attribute and the other elements will be generated for you
 
     <urth-viz-explorer ref="aDataFrame"></urth-viz-explorer>
+
+the active selection in the visualization is exposed using the `Urth.VizSelectionBehavior` and may be bound using the `selection` property:
+
+    <template is="urth-core-bind" channel="explore">
+      <urth-viz-explorer selection="{{exploreSelection}}" selection-as-object>
+        <urth-viz-query>
+          <urth-core-dataframe ref="aDataFrame"></urth-core-dataframe>
+        </urth-viz-query>
+      </urth-viz-explorer>
+    </template>
+
+declarativewidgets provides a simple function to generate all of this markup called `explore`.  Just pass in a dataframe reference:
+
+    explore(aDataFrame)
+
+or use optional arguments to specify properties and bindings:
+
+    explore(aDataFrame, properties={'selection-as-object': True}, bindings={'selection': 'explore_sel'})
+
 
 @group Urth Viz
 @element urth-viz-explorer
