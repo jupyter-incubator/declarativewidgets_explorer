@@ -166,7 +166,7 @@ Example:
                             selected="{{query.op}}"
                             attr-for-selected="value">
                             <template is="dom-repeat"
-                                items="{{_filterOpSet(query.col, query.columnTypes, _dfReady)}}">
+                                items="{{_filterOpSet(query.col, query.columns, query.columnTypes)}}">
                                 <paper-item value="{{item.op}}">{{item.desc}}</paper-item>
                             </template>
                         </paper-listbox>
@@ -245,9 +245,7 @@ Example:
                 type: Array,
                 persist: true,
                 value: function() { return []; }
-            },
-
-            _dfReady: Boolean
+            }
         },
 
         observers: [
@@ -292,9 +290,9 @@ Example:
             };
         },
 
-        _filterOpSet: function(column, columnTypes, ready) {
-            if (!column || !ready) { return []; }
-            var datatype = columnTypes[this.columns.indexOf(column)];
+        _filterOpSet: function(column, columns, columnTypes) {
+            if (!column || !columns) { return []; }
+            var datatype = columnTypes[columns.indexOf(column)];
             return datatype === 'Number' ? NUMERIC_FILTERS : FILTERS;
         },
 
@@ -327,14 +325,10 @@ Example:
 
             dataframe.addEventListener('columns-changed', function() {
                 this.columns = dataframe.columns;
-
-                this.set('_dfReady', this._dfReady || (dataframe.columns && dataframe.columnTypes));
             }.bind(this));
 
             dataframe.addEventListener('column-types-changed', function() {
                 this.columnTypes = dataframe.columnTypes;
-
-                this.set('_dfReady', this._dfReady || (dataframe.columns && dataframe.columnTypes));
             }.bind(this));
         },
 
