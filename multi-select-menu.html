@@ -73,8 +73,8 @@ Collapsing will hide the content but keep the header
                     on-iron-select="_updateSelectedValues"
                     on-iron-deselect="_updateSelectedValues">
                     <template is="dom-repeat" items="{{filteredItems}}" as="item">
-                        <paper-item class="list-item">
-                            <iron-icon icon="check"></iron-icon>[[item]]</paper-item>
+                        <paper-item class="list-item" data-index$="{{item.index}}">
+                            <iron-icon icon="check"></iron-icon>[[item.value]]</paper-item>
                     </template>
                 </paper-menu>
             </div>
@@ -93,6 +93,11 @@ Collapsing will hide the content but keep the header
                         return [];
                     }
                 },
+                // store original item indices so filtered selection works
+                itemIndices: {
+                    type: Array,
+                    computed: '_computeItemIndices(items)'
+                },
                 // type of items, used when selecting more than 1 item,
                 //      e.g. "3 items" or "3 carrots"
                 itemType: {
@@ -108,7 +113,7 @@ Collapsing will hide the content but keep the header
                 // items filtered by the filter property
                 filteredItems: {
                     type: Array,
-                    computed: '_computeFilteredItems(filter, items)'
+                    computed: '_computeFilteredItems(filter, itemIndices)'
                 },
                 // input label
                 label: {
@@ -165,16 +170,21 @@ Collapsing will hide the content but keep the header
                     this.filter = '';
                 }.bind(this), 250);
             },
-            _computeFilteredItems: function(filter, items) {
+            _computeFilteredItems: function(filter, itemIndices) {
                 if (filter) {
                     // non-adjacent regex
                     var regex = new RegExp('.*' + filter.split('').join('.*') + '.*');
-                    return items.filter(function(item) {
-                        return regex.test(item);
+                    return itemIndices.filter(function(item) {
+                        return regex.test(item.value);
                     });
                 } else {
-                    return items;
+                    return itemIndices;
                 }
+            },
+            _computeItemIndices: function(items) {
+                return items.map(function(item, i) {
+                    return { value: item, index: i };
+                });
             },
             _focusFilter: function() {
                 // use timeout so menu is open and filter input can be focused
@@ -183,8 +193,15 @@ Collapsing will hide the content but keep the header
                 }.bind(this), 250);
             },
             _updateSelectedValues: function() {
-                // get selected values based on menu item selections
-                var selectedIndices = this.$.items.selectedValues || [];
+                // get menu item selection indices
+                var filteredIndices = this.$.items.selectedValues || [];
+
+                // menu items could be filtered, so map to real indices
+                var selectedIndices = filteredIndices.map(function(i) {
+                    return this.$.items.items[i].dataset.index;
+                }, this);
+
+                // map item indices to values
                 var selectedValues = selectedIndices.map(function(index) {
                     return this.items[index];
                 }, this);
