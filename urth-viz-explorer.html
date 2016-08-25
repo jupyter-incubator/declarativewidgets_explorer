@@ -576,11 +576,14 @@ Example:
                 }
             });
 
-            if (independentOption !== undefined
-                    && dataframe.value.columns.indexOf(this.get('options.' + independentOption + '.column')) == -1) {
-                var independent = types.indexOf('temporal');
-                if (independent == -1) independent = types.indexOf('quantitative');
-                if (independent == -1) independent = 0;
+            var independent, dependent;
+
+            if (independentOption !== undefined) {
+                if ((independent = dataframe.value.columns.indexOf(this.get('options.' + independentOption + '.column'))) == -1) {
+                    independent = types.indexOf('temporal');
+                    if (independent == -1) independent = types.indexOf('quantitative');
+                    if (independent == -1) independent = 0;
+                }
                 types[independent] = null;
                 this.set('options.' + independentOption + '.index', null);
                 this.async(function() {
@@ -588,11 +591,12 @@ Example:
                 });
             }
 
-            if (dependentOption !== undefined
-                    && dataframe.value.columns.indexOf(this.get('options.' + dependentOption + '.column')) == -1) {
-                var dependent = types.indexOf('quantitative');
-                if (dependent == -1) dependent = 0;
-                if (dependent == independent) dependent++;
+            if (dependentOption !== undefined) {
+                if ((dependent = dataframe.value.columns.indexOf(this.get('options.' + dependentOption + '.column'))) == -1) {
+                    dependent = types.indexOf('quantitative');
+                    if (dependent == -1) dependent = 0;
+                    if (dependent == independent) dependent++;
+                }
                 types[dependent] = null;
                 this.set('options.' + dependentOption + '.index', null);
                 this.async(function() {
@@ -610,6 +614,8 @@ Example:
             });
 
             this.set('spec.data', { values: values });
+
+            this._rowsChangedCalled = true;
 
             if (this._columnsChangedCalled) { this.set('_dfReady', true); }
         },
