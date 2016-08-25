@@ -32,7 +32,7 @@ explore('trips', properties={'selection-as-object': True}, bindings={'selection'
 It is also possible to construct an `urth-viz-explorer` instance directly in HTML:
 
 ```html
-<link rel='import' href='urth_components/declarativewidgets-explorer/urth-viz-query.html' is='urth-core-import' package="jupyter-incubator/declarativewidgets_explorer"
+<link rel='import' href='urth_components/declarativewidgets-explorer/urth-viz-explorer.html' is='urth-core-import' package="jupyter-incubator/declarativewidgets_explorer"
 <urth-viz-explorer ref="aDataFrame"></urth-viz-explorer>
 ```
 
