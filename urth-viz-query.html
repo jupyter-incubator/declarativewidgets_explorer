@@ -15,9 +15,20 @@
 <link rel="import" href="jupyter-persist-behavior.html">
 
 <!--
-This element represents a query executed against an urth-core-dataframe element.
+This element provides UI to execute a query executed against an `urth-core-dataframe` element. The `urth-core-dataframe` is placed as a child to this element.
 
 Example:
+
+Let the user choose a query and display the results in an `urth-viz-table`
+
+    <template is="dom-bind">
+      <urth-viz-table datarows="{{df.data}}" columns="{{ df.columns }}" rows-visible=6 selection-as-object>
+      </urth-viz-table>
+      <urth-viz-query>
+        <urth-core-dataframe ref="aDataFrame" value="{{df}}" auto ></urth-core-dataframe>
+      </urth-viz-query>
+    </template>
+
 @group Urth Viz
 @element urth-viz-query
 -->
@@ -240,7 +251,9 @@ Example:
         is: 'urth-viz-query',
 
         properties: {
-            // array of queries - either filters or groups
+            /**
+             * An array of queries containing either filter or group operations
+             */
             queries: {
                 type: Array,
                 persist: true,
