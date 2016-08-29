@@ -8,6 +8,8 @@
 <link rel="import" href="../paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../paper-listbox/paper-listbox.html">
 <link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-radio-group/paper-radio-group.html">
+<link rel="import" href="../paper-radio-button/paper-radio-button.html">
 <link rel="import" href="../paper-button/paper-button.html">
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../paper-input/paper-input.html">
@@ -43,11 +45,11 @@ Let the user choose a query and display the results in an `urth-viz-table`
             /* TODO make this configurable using --urth-viz-query-row-width */
             width: 200px;
         }
-        #query-add-btns {
+        .query-add-btns {
             display: flex;
             justify-content: center;
         }
-        #query-add-btns paper-button {
+        .query-add-btns paper-button {
             width: 50%;
         }
         .query-remove-btn {
@@ -191,7 +193,7 @@ Let the user choose a query and display the results in an `urth-viz-table`
                 </template>
         </template>
 
-        <div id="query-add-btns">
+        <div class="query-add-btns">
             <paper-button on-tap="_addGroup">
                 <iron-icon icon="icons:add"></iron-icon>
                 group-by
@@ -202,7 +204,40 @@ Let the user choose a query and display the results in an `urth-viz-table`
             </paper-button>
         </div>
 
-        <!-- repeating query-group elements to be stamped as children of myDataframe -->
+        <template is="dom-repeat" items={{sorts}} as="sort">
+            <div class="sort-list">
+                <paper-dropdown-menu
+                    class="sort-col"
+                    label="sort column">
+                    <paper-listbox class="dropdown-content" selected="{{sort.col}}" attr-for-selected="value">
+                        <template is="dom-repeat" items="{{sort.columns}}">
+                            <paper-item value="{{item}}">{{item}}</paper-item>
+                        </template>
+                    </paper-listbox>
+                </paper-dropdown-menu>
+
+                <label id="direction">Direction:</label>
+                <paper-radio-group selected="{{sort.dir}}" aria-labelledby="direction">
+                    <paper-radio-button name="asc">ascending</paper-radio-button>
+                    <paper-radio-button name="desc">descending</paper-radio-button>
+                </paper-radio-group>
+
+                <paper-icon-button
+                    class="sort-remove-btn"
+                    on-tap="_removeSort"
+                    icon="clear"></paper-button>
+            </div>
+        </template>
+
+        <div class="query-add-btns">
+            <paper-button on-tap="_addSort">
+                <iron-icon icon="icons:add"></iron-icon>
+                sort
+            </paper-button>
+        </div>
+
+
+        <!-- repeating urth-core-query elements to be stamped as children of myDataframe -->
         <template id="queries" is="dom-repeat" items="{{queries}}" as="query" filter="_isQueryValid" observe="col op val">
             <!-- group -->
             <template is="dom-if" if="{{query.group}}">
@@ -220,6 +255,11 @@ Let the user choose a query and display the results in an `urth-viz-table`
             <template is="dom-if" if="{{query.filter}}">
                 <urth-core-query-filter>{{_filterExpression(query.col, query.op, query.val)}}</urth-core-query-filter>
             </template>
+        </template>
+
+        <!-- sort -->
+        <template id="sort" is="dom-if" if="{{sortAttrs.by}}">
+            <urth-core-query-sort by="{{sortAttrs.by}}" direction="{{sortAttrs.direction}}"></urth-core-query-sort>
         </template>
 
         <!-- user declares dataframe here -->
@@ -263,6 +303,23 @@ Let the user choose a query and display the results in an `urth-viz-table`
                 value: function() { return []; }
             },
 
+            /**
+             * An array of instructions to sort, each containing a column and sort direction
+             */
+            sorts: {
+                type: Array,
+                persist: true,
+                value: function() { return []; }
+            },
+
+            /**
+             * Computed attributes for `urth-core-query-sort` based on `sorts` Array
+             */
+            sortAttrs: {
+                type: Object,
+                computed: '_flattenSort(sorts.*)'
+            },
+
             lastModifiedQueryIndex: {
                 type: Number,
                 value: NaN
@@ -274,8 +331,8 @@ Let the user choose a query and display the results in an `urth-viz-table`
         ],
 
         observers: [
-            '_queriesChanged(queries.*)',
-            'saveState(queries.*)'
+            '_queriesChanged(queries.*,sorts.*)',
+            'saveState(queries.*,sorts.*)'
         ],
 
         _addAgg: function(event) {
@@ -301,6 +358,10 @@ Let the user choose a query and display the results in an `urth-viz-table`
 
         _arrayToString: function(arr) {
             return (arr || []).join(',');
+        },
+
+        _addSort: function() {
+            this.push('sorts', this._newQuery({ col: null, dir: "asc" }));
         },
 
         _filterExpression: function(col, op, val) {
@@ -425,6 +486,21 @@ Let the user choose a query and display the results in an `urth-viz-table`
             }
         },
 
+        _removeSort: function(event) {
+            this.splice('sorts', event.model.index, 1);
+        },
+
+        _flattenSort: function() {
+            var list = this.sorts.filter(function(s) {
+                return s.col && s.dir;
+            });
+
+            return {
+                by: list.map(function(s) { return s.col; }).join(','),
+                direction: list.map(function(s) { return s.dir; }).join(',')
+            };
+        },
+
         attached: function() {
             this.restoreState();
         },
@@ -432,7 +508,8 @@ Let the user choose a query and display the results in an `urth-viz-table`
         ready: function() {
             // move filters template to user-supplied urth-core-dataframe in light DOM
             var dataframe = this.$.myDataframe.getDistributedNodes()[0];
-            dataframe.appendChild(this.$.queries.root);
+            dataframe.appendChild(this.$.queries);
+            dataframe.appendChild(this.$.sort);
 
             dataframe.addEventListener('columns-changed', function() {
                 this.columns = dataframe.columns;
