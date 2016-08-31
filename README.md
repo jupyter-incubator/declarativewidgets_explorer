@@ -38,9 +38,15 @@ It is also possible to construct an `urth-viz-explorer` instance directly in HTM
 
 ## Developer Installation
 
-Copy a tarball of the declarativewidgets project (version 0.7 or later) into the top-level directory of this project, then:
+1. Clone the repository from github.
 
-`make init; make run`
+1. Make a tarball of the declarativewidgets project (version 0.7 or later) with bower dependencies manually included for the explorer
+
+    `make init; bower install path/to/explorer; make sdist`
+
+1. Copy the tarball from the `dist` directory into the top-level directory of the explorer project, then:
+
+    `make init; make run`
 
 Jupyter will be running on port 8888.
 
