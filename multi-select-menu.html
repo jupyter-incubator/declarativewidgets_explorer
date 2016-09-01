@@ -60,7 +60,8 @@ Collapsing will hide the content but keep the header
                     type="text"
                     readonly
                     value="[[selectedText]]"
-                    label="[[label]]">
+                    label="[[label]]"
+                    invalid="{{invalid}}">
                     <iron-icon icon="arrow-drop-down" suffix></iron-icon>
                 </paper-input>
             </div>
@@ -114,6 +115,11 @@ Collapsing will hide the content but keep the header
                 filteredItems: {
                     type: Array,
                     computed: '_computeFilteredItems(filter, itemIndices)'
+                },
+                // set the invalid state
+                invalid: {
+                    type: Boolean,
+                    value: false
                 },
                 // input label
                 label: {
