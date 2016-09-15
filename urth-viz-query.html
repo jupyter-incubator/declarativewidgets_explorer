@@ -125,38 +125,32 @@ Let the user choose a query and display the results in an `urth-viz-table`
     <template>
         <template is="dom-repeat" items={{queries}} as="query" index-as="query-index">
             <div class="query-item" data-query-index$="{{query-index}}">
-                <paper-icon-button
-                    class="query-remove-btn"
-                    on-tap="_removeQuery"
-                    icon="clear"></paper-icon-button>
+                <paper-icon-button class="query-remove-btn" noink icon="clear"
+                    on-tap="_removeQuery"></paper-icon-button>
 
                 <!-- group -->
                 <template is="dom-if" if="{{query.group}}">
-                    <multi-select-menu
-                        label="group by"
-                        selected="{{query.col}}"
-                        items="{{query.columns}}"
-                        item-type="columns"
+                    <multi-select-menu label="group by" selected="{{query.col}}"
+                        items="{{query.columns}}" item-type="columns"
                         invalid="{{!_arrayContains(query.columns,query.col)}}"></multi-select-menu>
                     <div class="agg-list">
-                        <template is="dom-repeat"
-                            items="{{query.aggregators}}" as="agg">
+                        <template is="dom-repeat" items="{{query.aggregators}}" as="agg">
                             <div class="query-agg">
-                                <paper-dropdown-menu
+                                <paper-dropdown-menu class="agg-op"
                                     invalid="{{!_isNotEmptyString(agg.op)}}"
-                                    class="agg-op"
-                                    label="operation">
-                                    <paper-listbox class="dropdown-content" selected="{{agg.op}}" attr-for-selected="value">
+                                    label="operation" noink>
+                                    <paper-listbox class="dropdown-content"
+                                        selected="{{agg.op}}" attr-for-selected="value">
                                         <paper-item value="sum">sum</paper-item>
                                         <paper-item value="mean">mean</paper-item>
                                     </paper-listbox>
                                 </paper-dropdown-menu>
                                 <div class="agg-delete-row">
-                                    <paper-dropdown-menu
+                                    <paper-dropdown-menu class="agg-col" noink
                                         invalid="{{!_arrayContains(query.columns,agg.col)}}"
-                                        class="agg-col"
                                         label="column">
-                                        <paper-listbox class="dropdown-content" selected="{{agg.col}}" attr-for-selected="value">
+                                        <paper-listbox class="dropdown-content"
+                                            selected="{{agg.col}}" attr-for-selected="value">
                                             <template is="dom-repeat"
                                                 items="{{query.columns}}"
                                                 filter="{{_filterItemsByNumberType(query.columns, query.columnTypes)}}">
@@ -164,36 +158,32 @@ Let the user choose a query and display the results in an `urth-viz-table`
                                             </template>
                                         </paper-listbox>
                                     </paper-dropdown-menu>
-
-                                    <paper-icon-button
-                                        class="agg-remove-btn"
-                                        on-tap="_removeAgg"
-                                        icon="clear"></paper-button>
+                                    <paper-icon-button class="agg-remove-btn"
+                                        on-tap="_removeAgg" icon="clear" noink></paper-icon-button>
                                 </div>
                             </div>
                         </template>
                     </div>
 
-                    <paper-button class="add-agg" on-tap="_addAgg">
-                        <iron-icon icon="icons:add"></iron-icon>
-                        aggregation
-                    </paper-button>
+                    <paper-button class="add-agg" on-tap="_addAgg" noink>
+                        <iron-icon icon="icons:add"></iron-icon>aggregation</paper-button>
                 </template>
 
                 <!-- filter -->
                 <template is="dom-if" if="{{query.filter}}">
-                    <paper-dropdown-menu label="filter column" invalid="{{!_arrayContains(query.columns,query.col)}}">
-                        <paper-listbox class="dropdown-content" selected="{{query.col}}" attr-for-selected="value">
+                    <paper-dropdown-menu label="filter column" noink
+                        invalid="{{!_arrayContains(query.columns,query.col)}}">
+                        <paper-listbox class="dropdown-content"
+                            selected="{{query.col}}" attr-for-selected="value">
                             <template is="dom-repeat" items="{{query.columns}}">
                                 <paper-item value="{{item}}">{{item}}</paper-item>
                             </template>
                         </paper-listbox>
                     </paper-dropdown-menu>
-                    <paper-dropdown-menu label="to be" invalid="{{!_isNotEmptyString(query.op)}}">
-                        <paper-listbox
-                            class="dropdown-content"
-                            selected="{{query.op}}"
-                            attr-for-selected="value">
+                    <paper-dropdown-menu label="to be" noink
+                        invalid="{{!_isNotEmptyString(query.op)}}">
+                        <paper-listbox class="dropdown-content"
+                            selected="{{query.op}}" attr-for-selected="value">
                             <template is="dom-repeat"
                                 items="{{_filterOpSet(query.col, query.columns, query.columnTypes)}}">
                                 <paper-item value="{{item.op}}">{{item.desc}}</paper-item>
@@ -201,62 +191,49 @@ Let the user choose a query and display the results in an `urth-viz-table`
                         </paper-listbox>
                     </paper-dropdown-menu>
                     <paper-input invalid="{{!_isNotEmptyString(query.val)}}"
-                        label="value"
-                        value="{{query.val}}"></paper-input>
+                        label="value" value="{{query.val}}"></paper-input>
                 </template>
+            </div>
         </template>
 
         <div class="query-add-btns group-filter">
-            <paper-button on-tap="_addGroup">
-                <iron-icon icon="icons:add"></iron-icon>
-                group-by
-            </paper-button>
-            <paper-button class="add-filter" on-tap="_addFilter">
-                <iron-icon icon="icons:add"></iron-icon>
-                filter
-            </paper-button>
+            <paper-button on-tap="_addGroup" noink>
+                <iron-icon icon="icons:add"></iron-icon>group-by</paper-button>
+            <paper-button class="add-filter" on-tap="_addFilter" noink>
+                <iron-icon icon="icons:add"></iron-icon>filter</paper-button>
         </div>
 
         <template is="dom-repeat" items={{sorts}} as="sort">
             <div class="query-item sort-item">
-                <paper-dropdown-menu
-                    class="sort-col"
-                    label="sort column"
-                    invalid="{{!_isNotEmptyString(sort.col)}}">
+                <paper-dropdown-menu class="sort-col" label="sort column"
+                    invalid="{{!_isNotEmptyString(sort.col)}}" noink>
                     <paper-listbox class="dropdown-content" selected="{{sort.col}}" attr-for-selected="value">
                         <template is="dom-repeat" items="{{sort.columns}}">
                             <paper-item value="{{item}}">{{item}}</paper-item>
                         </template>
                     </paper-listbox>
                 </paper-dropdown-menu>
-
-                <paper-icon-button class="sort-direction-btn" toggles
+                <paper-icon-button class="sort-direction-btn" toggles noink
                     icon="sort" active="{{sort.dir}}"></paper-icon-button>
-
-                <paper-icon-button
-                    class="query-remove-btn"
-                    on-tap="_removeSort"
-                    icon="clear"></paper-button>
+                <paper-icon-button class="query-remove-btn" on-tap="_removeSort"
+                    icon="clear" noink></paper-button>
             </div>
         </template>
 
         <div class="query-add-btns">
-            <paper-button on-tap="_addSort">
-                <iron-icon icon="icons:add"></iron-icon>
-                sort
-            </paper-button>
+            <paper-button on-tap="_addSort" noink>
+                <iron-icon icon="icons:add"></iron-icon>sort</paper-button>
         </div>
 
 
         <!-- repeating urth-core-query elements to be stamped as children of myDataframe -->
-        <template id="queries" is="dom-repeat" items="{{queries}}" as="query" filter="_isQueryValid" observe="col op val">
+        <template id="queries" is="dom-repeat" items="{{queries}}" as="query"
+            filter="_isQueryValid" observe="col op val">
             <!-- group -->
             <template is="dom-if" if="{{query.group}}">
                 <urth-core-query-group by="{{_arrayToString(query.col)}}">
                     <template is="dom-repeat" items="{{query.aggregators}}" as="agg">
-                        <urth-core-query-agg
-                            op="{{agg.op}}"
-                            col="{{agg.col}}"
+                        <urth-core-query-agg op="{{agg.op}}" col="{{agg.col}}"
                             disabled="{{!agg.col}}"></urth-core-query-agg>
                     </template>
                 </urth-core-query-group>
@@ -270,7 +247,8 @@ Let the user choose a query and display the results in an `urth-viz-table`
 
         <!-- sort -->
         <template id="sort" is="dom-if" if="{{sortAttrs.by}}">
-            <urth-core-query-sort by="{{sortAttrs.by}}" direction="{{sortAttrs.direction}}"></urth-core-query-sort>
+            <urth-core-query-sort by="{{sortAttrs.by}}"
+                direction="{{sortAttrs.direction}}"></urth-core-query-sort>
         </template>
 
         <!-- user declares dataframe here -->
@@ -313,7 +291,6 @@ Let the user choose a query and display the results in an `urth-viz-table`
                 persist: true,
                 value: function() { return []; }
             },
-
             /**
              * An array of instructions to sort, each containing a column and sort direction
              */
@@ -322,7 +299,6 @@ Let the user choose a query and display the results in an `urth-viz-table`
                 persist: true,
                 value: function() { return []; }
             },
-
             /**
              * Computed attributes for `urth-core-query-sort` based on `sorts` Array
              */
@@ -330,7 +306,6 @@ Let the user choose a query and display the results in an `urth-viz-table`
                 type: Object,
                 computed: '_flattenSort(sorts.*)'
             },
-
             lastModifiedQueryIndex: {
                 type: Number,
                 value: NaN
@@ -375,7 +350,6 @@ Let the user choose a query and display the results in an `urth-viz-table`
         _arrayToString: function(arr) {
             return (arr || []).join(',');
         },
-
 
         _filterExpression: function(col, op, val) {
             if (Number.isNaN(+val)) {
@@ -519,7 +493,7 @@ Let the user choose a query and display the results in an `urth-viz-table`
 
         ready: function() {
             // move filters template to user-supplied urth-core-dataframe in light DOM
-            var dataframe = this.$.myDataframe.getDistributedNodes()[0];
+            var dataframe = Polymer.dom(this.$.myDataframe).getDistributedNodes()[0];
             dataframe.appendChild(this.$.queries);
             dataframe.appendChild(this.$.sort);
 

@@ -50,7 +50,8 @@ Collapsing will hide the content but keep the header
         <paper-header-panel mode="seamed" class="flex">
             <paper-toolbar>
                 <span class="title" style="font-size: 14px; margin-left: 0;">{{heading}}</span>
-                <paper-icon-button icon="{{_icon(opened)}}" title="{{_title(opened)}}" on-tap="toggle"></paper-icon-button>
+                <paper-icon-button icon="{{_icon(opened)}}" title="{{_title(opened)}}"
+                    on-tap="toggle" noink></paper-icon-button>
             </paper-toolbar>
             <div>
                 <iron-collapse id="collapse" class="card-content" opened="{{opened}}">
@@ -81,7 +82,7 @@ Collapsing will hide the content but keep the header
             },
 
             _icon: function(opened) {
-                return opened ? 'remove' : 'add';
+                return opened ? 'expand-less' : 'expand-more';
             },
 
             _title: function(opened) {
