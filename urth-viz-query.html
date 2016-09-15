@@ -8,8 +8,6 @@
 <link rel="import" href="../paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../paper-listbox/paper-listbox.html">
 <link rel="import" href="../paper-item/paper-item.html">
-<link rel="import" href="../paper-radio-group/paper-radio-group.html">
-<link rel="import" href="../paper-radio-button/paper-radio-button.html">
 <link rel="import" href="../paper-button/paper-button.html">
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../paper-input/paper-input.html">
@@ -65,12 +63,15 @@ Let the user choose a query and display the results in an `urth-viz-table`
         .query-item {
             position: relative;
             padding: 0 1em 1em;
+        }
+        .query-item,
+        .query-add-btns.group-filter {
             border-bottom: 1px solid #eee;
         }
         .query-item:hover {
             background-color: #eee;
         }
-        .query-item > * {
+        .query-item:not(.sort-item) > * {
             display: block;
         }
         .query-label {
@@ -82,6 +83,18 @@ Let the user choose a query and display the results in an `urth-viz-table`
         }
         .add-agg {
             padding: 0.4em 0 0 0.4em;
+        }
+        .sort-item .query-remove-btn {
+            top: 1em;
+        }
+        .sort-item .sort-direction-btn {
+            padding: 0;
+            width: 1.7em;
+            height: 1.7em;
+            margin-left: 1em;
+        }
+        .sort-item .sort-direction-btn[active] {
+            transform: rotateX(180deg);
         }
         :host {
             display: flex;
@@ -193,7 +206,7 @@ Let the user choose a query and display the results in an `urth-viz-table`
                 </template>
         </template>
 
-        <div class="query-add-btns">
+        <div class="query-add-btns group-filter">
             <paper-button on-tap="_addGroup">
                 <iron-icon icon="icons:add"></iron-icon>
                 group-by
@@ -205,10 +218,11 @@ Let the user choose a query and display the results in an `urth-viz-table`
         </div>
 
         <template is="dom-repeat" items={{sorts}} as="sort">
-            <div class="sort-list">
+            <div class="query-item sort-item">
                 <paper-dropdown-menu
                     class="sort-col"
-                    label="sort column">
+                    label="sort column"
+                    invalid="{{!_isNotEmptyString(sort.col)}}">
                     <paper-listbox class="dropdown-content" selected="{{sort.col}}" attr-for-selected="value">
                         <template is="dom-repeat" items="{{sort.columns}}">
                             <paper-item value="{{item}}">{{item}}</paper-item>
@@ -216,14 +230,11 @@ Let the user choose a query and display the results in an `urth-viz-table`
                     </paper-listbox>
                 </paper-dropdown-menu>
 
-                <label id="direction">Direction:</label>
-                <paper-radio-group selected="{{sort.dir}}" aria-labelledby="direction">
-                    <paper-radio-button name="asc">ascending</paper-radio-button>
-                    <paper-radio-button name="desc">descending</paper-radio-button>
-                </paper-radio-group>
+                <paper-icon-button class="sort-direction-btn" toggles
+                    icon="sort" active="{{sort.dir}}"></paper-icon-button>
 
                 <paper-icon-button
-                    class="sort-remove-btn"
+                    class="query-remove-btn"
                     on-tap="_removeSort"
                     icon="clear"></paper-button>
             </div>
@@ -348,6 +359,11 @@ Let the user choose a query and display the results in an `urth-viz-table`
             this.push('queries', this._newQuery({ group: true, aggregators: [] }));
         },
 
+        _addSort: function() {
+            // true == asc, false == desc
+            this.push('sorts', this._newQuery({ col: null, dir: false }));
+        },
+
         _arrayContains: function(arr, values) {
             values = [].concat(values);
             return values.length === 0 ? false :
@@ -360,9 +376,6 @@ Let the user choose a query and display the results in an `urth-viz-table`
             return (arr || []).join(',');
         },
 
-        _addSort: function() {
-            this.push('sorts', this._newQuery({ col: null, dir: "asc" }));
-        },
 
         _filterExpression: function(col, op, val) {
             if (Number.isNaN(+val)) {
@@ -381,6 +394,16 @@ Let the user choose a query and display the results in an `urth-viz-table`
             if (!column || !columns) { return []; }
             var datatype = columnTypes[columns.indexOf(column)];
             return datatype === 'Number' ? NUMERIC_FILTERS : FILTERS;
+        },
+
+        _flattenSort: function() {
+            var validSorts = this.sorts.filter(function(s) { return s.col; });
+            return {
+                by: validSorts.map(function(s) { return s.col; }).join(','),
+                direction: validSorts.map(function(s) {
+                    return s.dir ? 'asc' : 'desc';
+                }).join(',')
+            };
         },
 
         _isNotEmptyString: function(value) {
@@ -435,6 +458,10 @@ Let the user choose a query and display the results in an `urth-viz-table`
             this.splice('columns', event.model['query-index'], 1);
         },
 
+        _removeSort: function(event) {
+            this.splice('sorts', event.model.index, 1);
+        },
+
         _updateQueryColumns: function() {
             var lastModified = Number(this.lastModifiedQueryIndex);
             var breakLoop = false;
@@ -484,21 +511,6 @@ Let the user choose a query and display the results in an `urth-viz-table`
                 var query = this.queries[i];
                 if (query.group && this._isQueryValid(query)) { break; }
             }
-        },
-
-        _removeSort: function(event) {
-            this.splice('sorts', event.model.index, 1);
-        },
-
-        _flattenSort: function() {
-            var list = this.sorts.filter(function(s) {
-                return s.col && s.dir;
-            });
-
-            return {
-                by: list.map(function(s) { return s.col; }).join(','),
-                direction: list.map(function(s) { return s.dir; }).join(',')
-            };
         },
 
         attached: function() {
