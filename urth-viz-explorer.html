@@ -134,8 +134,19 @@ or use optional arguments to specify properties and bindings:
                 width: 200px;
             }
 
+            paper-dropdown-menu.option-choice {
+                display: inline-block;
+            }
+
             paper-card-collapse {
                 display: block;
+            }
+
+            .clear-option-btn {
+                color: #9b9b9b;
+                padding: 0;
+                width: 1.3em;
+                height: 1.3em;
             }
 
             :host {
@@ -231,13 +242,24 @@ or use optional arguments to specify properties and bindings:
             <template is="dom-if" if="[[!showAsTable]]">
                 <paper-card-collapse class="viz-explorer-controls-section" heading="Viz Options" opened="{{_cardsOpened.options}}">
                     <template is="dom-repeat" items="{{options}}" as="option">
-                        <paper-dropdown-menu label="{{option.label}}" selected-item-label="{{option.column}}">
-                            <paper-listbox class="dropdown-content" selected="{{option.index}}">
-                                <template is="dom-repeat" items="{{df.columns}}" filter="{{_filterFieldsByType(option.filter)}}">
-                                    <paper-item>{{item}}</paper-item>
-                                </template>
-                            </paper-listbox>
-                        </paper-dropdown-menu>
+                        <div>
+                            <paper-dropdown-menu class="option-choice" label="{{option.label}}" selected-item-label="{{option.column}}">
+                                <paper-listbox class="dropdown-content" selected="{{option.index}}">
+                                    <template is="dom-repeat" items="{{df.columns}}" filter="{{_filterFieldsByType(option.filter)}}">
+                                        <paper-item>{{item}}</paper-item>
+                                    </template>
+                                </paper-listbox>
+                            </paper-dropdown-menu>
+                            <span data-index$="{{index}}">
+                            <template is="dom-if" if="[[option.optional]]">
+                                <paper-icon-button
+                                    class="clear-option-btn"
+                                    on-tap="_clearOption"
+                                    icon="cancel">
+                                </paper-button>
+                            </template>
+                            </span>
+                        </div>
                     </template>
                 </paper-card-collapse>
             </template>
@@ -432,6 +454,11 @@ or use optional arguments to specify properties and bindings:
         _resize: function() {
             var vega = this.$$('urth-viz-vega');
             if (vega) vega._resize();
+        },
+
+        _clearOption: function(event) {
+            var i = event.currentTarget.parentNode.getAttribute("data-index");
+            this.set(['options', i, 'index'], null);
         },
 
         _closeEditDialog: function(event) {
@@ -681,10 +708,11 @@ or use optional arguments to specify properties and bindings:
         ready: function() {
             this._optionsMap = {
                 table: [],
-                bar: [this.xOption, this.yOption, { prop: 'color', label: 'color', filter: 'nominal' }],
-                area: [this.xOption, this.yOption, { prop: 'color', label: 'color', filter: 'nominal' }],
-                line: [this.xOption, this.yOption, { prop: 'color', label: 'color', filter: 'nominal' }],
-                circle: [this.xOption, this.yOption, { prop: 'size', label: 'size', filter: 'quantitative' }, { prop: 'color', label: 'color', filter: 'nominal' }]
+                bar: [this.xOption, this.yOption, { prop: 'color', label: 'color', filter: 'nominal', optional: true }],
+                area: [this.xOption, this.yOption, { prop: 'color', label: 'color', filter: 'nominal', optional: true }],
+                line: [this.xOption, this.yOption, { prop: 'color', label: 'color', filter: 'nominal', optional: true }],
+                circle: [this.xOption, this.yOption, { prop: 'size', label: 'size', filter: 'quantitative', optional: true },
+                        { prop: 'color', label: 'color', filter: 'nominal', optional: true }]
             };
 
             this.options = this._optionsMap[this.type];
