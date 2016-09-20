@@ -209,16 +209,12 @@ or use optional arguments to specify properties and bindings:
 
         <!-- Button to collapse contols -->
         <div id="controls-toolbar">
-            <paper-icon-button
-                id="controls-collapse-btn"
-                icon="chevron-left"
-                on-tap="_toggleCollapse"
-                noink="true"></paper-icon-button>
+            <paper-icon-button id="controls-collapse-btn"
+                icon="{{_computeCollapseButtonIcon(_controlsOpened)}}"
+                on-tap="_toggleCollapse" noink></paper-icon-button>
             <template is="dom-if" if="[[!showAsTable]]">
-                <paper-button
-                    id="edit-spec-btn"
-                    on-tap="_showEditDialog"
-                    title="Edit chart JSON">{ }</paper-button>
+                <paper-button id="edit-spec-btn" on-tap="_showEditDialog"
+                    title="Edit chart JSON" noink>{ }</paper-button>
             </template>
         </div>
 
@@ -226,7 +222,7 @@ or use optional arguments to specify properties and bindings:
         <iron-collapse id="viz-explorer-controls" horizontal="true" opened="{{_controlsOpened}}">
             <!-- select viz type -->
             <paper-card-collapse class="viz-explorer-controls-section" heading="Viz" opened="{{_cardsOpened.viz}}">
-                <paper-dropdown-menu label="Viz type">
+                <paper-dropdown-menu label="Viz type" noink>
                     <paper-listbox class="dropdown-content" attr-for-selected="name" selected="{{type}}">
                         <paper-item name="table">Table</paper-item>
                         <paper-item name="bar">Bar Chart</paper-item>
@@ -240,24 +236,29 @@ or use optional arguments to specify properties and bindings:
 
             <!-- select viz properties -->
             <template is="dom-if" if="[[!showAsTable]]">
-                <paper-card-collapse class="viz-explorer-controls-section" heading="Viz Options" opened="{{_cardsOpened.options}}">
+                <paper-card-collapse class="viz-explorer-controls-section"
+                    heading="Viz Options" opened="{{_cardsOpened.options}}">
                     <template is="dom-repeat" items="{{options}}" as="option">
                         <div>
-                            <paper-dropdown-menu class="option-choice" label="{{option.label}}" selected-item-label="{{option.column}}">
-                                <paper-listbox class="dropdown-content" selected="{{option.index}}">
-                                    <template is="dom-repeat" items="{{df.columns}}" filter="{{_filterFieldsByType(option.filter)}}">
+                            <paper-dropdown-menu class="option-choice" noink
+                                label="{{option.label}}"
+                                selected-item-label="{{option.column}}">
+                                <paper-listbox class="dropdown-content"
+                                    selected="{{option.index}}">
+                                    <template is="dom-repeat" items="{{df.columns}}"
+                                        filter="{{_filterFieldsByType(option.filter)}}">
                                         <paper-item>{{item}}</paper-item>
                                     </template>
                                 </paper-listbox>
                             </paper-dropdown-menu>
                             <span data-index$="{{index}}">
-                            <template is="dom-if" if="[[option.optional]]">
-                                <paper-icon-button
-                                    class="clear-option-btn"
-                                    on-tap="_clearOption"
-                                    icon="cancel">
-                                </paper-button>
-                            </template>
+                                <template is="dom-if" if="[[option.optional]]">
+                                    <paper-icon-button
+                                        class="clear-option-btn"
+                                        on-tap="_clearOption"
+                                        icon="cancel">
+                                    </paper-button>
+                                </template>
                             </span>
                         </div>
                     </template>
@@ -265,7 +266,8 @@ or use optional arguments to specify properties and bindings:
             </template>
 
             <!-- dataframe query -->
-            <paper-card-collapse id="query-card" class="viz-explorer-controls-section" heading="Query" opened="{{_cardsOpened.query}}">
+            <paper-card-collapse id="query-card" class="viz-explorer-controls-section"
+                heading="Query" opened="{{_cardsOpened.query}}">
                 <content select="urth-viz-query"></content>
             </paper-card-collapse>
         </iron-collapse>
@@ -274,9 +276,7 @@ or use optional arguments to specify properties and bindings:
         <div id="viz-explorer-viz">
             <!-- table view -->
             <template is="dom-if" if="[[showAsTable]]">
-                <urth-viz-table
-                    datarows="{{df.data}}"
-                    columns="{{df.columns}}"
+                <urth-viz-table datarows="{{df.data}}" columns="{{df.columns}}"
                     selection-index="{{selectionIndex}}"
                     on-selection-info-changed="_selectionInfoChanged">
                 </urth-viz-table>
@@ -284,9 +284,7 @@ or use optional arguments to specify properties and bindings:
 
             <!-- viz view -->
             <template is="dom-if" if="[[!showAsTable]]">
-                <urth-viz-vega
-                    mode="vega-lite"
-                    spec="{{spec}}"
+                <urth-viz-vega mode="vega-lite" spec="{{spec}}"
                     selection-index="{{selectionIndex}}"
                     on-selection-info-changed="_selectionInfoChanged">
                 </urth-viz-vega>
@@ -294,10 +292,11 @@ or use optional arguments to specify properties and bindings:
 
             <paper-dialog id="spec-dialog" on-iron-overlay-closed="_closeEditDialog">
                 <div id="spec-dialog-body">
-                    <paper-textarea id="spec-editor" value="[[_computeSpecString(spec.*)]]"></paper-textarea>
+                    <paper-textarea id="spec-editor"
+                        value="[[_computeSpecString(spec.*)]]"></paper-textarea>
                     <div class="buttons">
-                        <paper-button dialog-dismiss>Cancel</paper-button>
-                        <paper-button dialog-confirm>Update</paper-button>
+                        <paper-button dialog-dismiss noink>Cancel</paper-button>
+                        <paper-button dialog-confirm noink>Update</paper-button>
                     </div>
                 </div>
             </paper-dialog>
@@ -307,19 +306,16 @@ or use optional arguments to specify properties and bindings:
     </template>
 </dom-module>
 <script>
-
     'use strict';
 
     Polymer({
         is: 'urth-viz-explorer',
 
         properties: {
-
             /**
              * Name of the dataframe reference in the kernel to visualize
              */
             ref: String,
-
             /**
              * The chart type to render (bar, line, area or circle)
              */
@@ -329,7 +325,6 @@ or use optional arguments to specify properties and bindings:
                 persist: true,
                 observer: '_typeChanged'
             },
-
             /**
              * Limit number of rows on dataframe
              */
@@ -339,7 +334,6 @@ or use optional arguments to specify properties and bindings:
                 persist: true,
                 value: 20
             },
-
             /*
              // Allows user to select multiple chart components (bars in barchart, slices in pie chart, etc).
             multiSelect: {
@@ -348,7 +342,6 @@ or use optional arguments to specify properties and bindings:
                 reflectToAttribute: true
             },
              */
-
             /**
              * True if the user is presently looking at a table
              * @private
@@ -357,7 +350,6 @@ or use optional arguments to specify properties and bindings:
                 type: Boolean,
                 computed: '_showAsTable(type)'
             },
-
             /**
              * List of attributes bound to "Viz Options" template
              * @private
@@ -367,7 +359,6 @@ or use optional arguments to specify properties and bindings:
                 persist: true,
                 value: function() { return []; }
             },
-
             /**
              * Shared attributes used for x axis form binding
              * @private
@@ -376,7 +367,6 @@ or use optional arguments to specify properties and bindings:
                 type: Object,
                 value: function() { return { prop: 'x', label: 'x axis' }; }
             },
-
             /**
              * Shared attributes used for y axis form binding
              * @private
@@ -385,7 +375,6 @@ or use optional arguments to specify properties and bindings:
                 type: Object,
                 value: function() { return { prop: 'y', label: 'y axis' }; }
             },
-
             /**
              * Specification object used to generate visualization with `<urth-viz-vega>`
              */
@@ -400,17 +389,14 @@ or use optional arguments to specify properties and bindings:
                     };
                 }
             },
-
             /**
              * Keep track of state of top collapse element
              */
             _controlsOpened: {
                 type: Boolean,
-                observer: '_controlsOpenedChanged',
                 persist: true,
                 value: true
             },
-
             /**
              * Keep track of state of various collapse elements
              */
@@ -425,7 +411,6 @@ or use optional arguments to specify properties and bindings:
                     };
                 }
             },
-
             /**
              * Both rows and columns are ready on the dataframe
              * @private
@@ -451,11 +436,6 @@ or use optional arguments to specify properties and bindings:
             'iron-resize': '_resize'
         },
 
-        _resize: function() {
-            var vega = this.$$('urth-viz-vega');
-            if (vega) vega._resize();
-        },
-
         _clearOption: function(event) {
             var i = event.currentTarget.parentNode.getAttribute("data-index");
             this.set(['options', i, 'index'], null);
@@ -477,131 +457,6 @@ or use optional arguments to specify properties and bindings:
                 // reset text to spec
                 specEditor.value = this._computeSpecString();
             }
-        },
-
-        _dataChanged: function(event) {
-            this.df = event.detail.value;
-        },
-
-        _typeChanged: function(newType) {
-            if (newType != 'table') {
-                this.set('spec.mark', newType);
-            }
-        },
-
-        _specChanged: function(changeRecord, ready) {
-            if (!ready) { return; }
-
-            var channelMatch = changeRecord.path.match(/^spec.encoding.([^.]+).field$/)
-            if (channelMatch) {
-                var type = this._columnType(this.df.columnTypes[this.df.columns.indexOf(changeRecord.value)]),
-                    channel = this.spec.encoding[channelMatch[1]];
-                channel.type = type;
-                if (type === 'temporal') {
-                    channel.timeUnit = this._computeUnit(channel.field, false);
-                    channel.axis = { shortTimeLabels: true};
-                } else {
-                    delete channel.timeUnit;
-                    if (this.spec.axis) delete this.spec.axis.shortTimeLabels;
-                }
-            }
-        },
-
-        _pickOptions: function(newType, ready) {
-            if (!ready) { return; }
-
-            var options = this.options;
-
-            // clear out any fields in the spec from previous type
-            this.set('spec.encoding', {});
-            this.set('options', []);
-
-            if (this._initialTypeSetup) {
-                // one time flag, when type and options information was restored with PersistBehavior
-                // refresh with those same options
-                delete this._initialTypeSetup;
-            } else {
-                // Reset to default options based on type chosen
-                options = (this._optionsMap || {})[newType];
-            }
-
-            // rebuild options and corresponding spec
-            //TODO: should use this.splice to add and remove in one step
-            options.forEach(function(option) { this.push('options', option); }, this);
-        },
-
-        _optionsChanged: function(changeRecord, ready) {
-            if (!changeRecord || !ready) return;
-
-            if (changeRecord.path === 'options.splices') {
-                changeRecord.value.indexSplices.forEach(function(s) {
-                    s.removed.forEach(function(option) { delete this.spec.encoding[option.prop]; }, this);
-                    for (var i = 0; i < s.addedCount; i++) {
-                        var option = s.object[s.index + i];
-                        if (option.column) {
-                            var channel = option.prop,
-                                type = this._columnType(this.df.columnTypes[this.df.columns.indexOf(option.column)]);
-                            this.spec.encoding[channel] = this.spec.encoding[channel] || {};
-                            this.set('spec.encoding.' + channel + '.field', option.column);
-                            this.set('spec.encoding.' + channel + '.type', type);
-                        }
-                    }
-                }, this);
-
-                return;
-            }
-
-            // Assign fields in spec as indicated by user
-            var match = changeRecord.path.match(/^(options\.#\d)\.column$/);
-            if (match) {
-                var channel = this.get(match[1]).prop, column = this.get(match[0]),
-                    type = this._columnType(this.df.columnTypes[this.df.columns.indexOf(column)]);
-                if (column) {
-                    this.spec.encoding[channel] = this.spec.encoding[channel] || {};
-                    this.set('spec.encoding.' + channel + '.field', column);
-                    this.set('spec.encoding.' + channel + '.type', type);
-                } else {
-                    this.set('spec.encoding.' + channel, null);
-                }
-            }
-        },
-
-        _computeUnit: function(field, periodic) {
-            var dates = this.spec.data.values.map(function(row) { return row[field]; });
-            var diff = (new Date(Math.max.apply(null, dates)) - new Date(Math.min.apply(null, dates))) / 1000;
-            var unit = 'year';
-
-            if (diff < 60 * 60 * 24) unit = periodic ? 'hours' : 'yearmonthdatehoursminutes';
-            else if (diff < 60 * 60 * 24 * 30) unit = periodic ? 'day' : 'yearmonthdatehours';
-            else if (diff < 60 * 60 * 24 * 30 * 12) unit = periodic ? 'month' : 'yearmonthdate';
-
-            return unit;
-        },
-
-        _columnType: function(datatype) {
-            var type;
-
-            switch (datatype) {
-            case 'Date':
-                type = 'temporal'; break;
-            case 'Number':
-                type = 'quantitative'; break;
-            default:
-                type = 'nominal';
-            }
-
-            return type;
-        },
-
-        _showAsTable: function(type) {
-            return type == 'table';
-        },
-
-        _filterFieldsByType: function(type) {
-            return type ? function(column) {
-                var i = this.df.columns.indexOf(column);
-                return this._columnType(this.df.columnTypes[i]) === type;
-            }.bind(this) : null;
         },
 
         _columnsChanged: function(event) {
@@ -662,6 +517,116 @@ or use optional arguments to specify properties and bindings:
             }
         },
 
+        _columnType: function(datatype) {
+            var type;
+
+            switch (datatype) {
+            case 'Date':
+                type = 'temporal'; break;
+            case 'Number':
+                type = 'quantitative'; break;
+            default:
+                type = 'nominal';
+            }
+
+            return type;
+        },
+
+        _computeCollapseButtonIcon: function(opened) {
+            return opened ? 'chevron-left' : 'chevron-right';
+        },
+
+        _computeSpecString: function() {
+            return JSON.stringify(this.spec, null, 4);
+        },
+
+        _computeUnit: function(field, periodic) {
+            var dates = this.spec.data.values.map(function(row) { return row[field]; });
+            var diff = (new Date(Math.max.apply(null, dates)) - new Date(Math.min.apply(null, dates))) / 1000;
+            var unit = 'year';
+
+            if (diff < 60 * 60 * 24) unit = periodic ? 'hours' : 'yearmonthdatehoursminutes';
+            else if (diff < 60 * 60 * 24 * 30) unit = periodic ? 'day' : 'yearmonthdatehours';
+            else if (diff < 60 * 60 * 24 * 30 * 12) unit = periodic ? 'month' : 'yearmonthdate';
+
+            return unit;
+        },
+
+        _dataChanged: function(event) {
+            this.df = event.detail.value;
+        },
+
+        _filterFieldsByType: function(type) {
+            return type ? function(column) {
+                var i = this.df.columns.indexOf(column);
+                return this._columnType(this.df.columnTypes[i]) === type;
+            }.bind(this) : null;
+        },
+
+        _optionsChanged: function(changeRecord, ready) {
+            if (!changeRecord || !ready) return;
+
+            if (changeRecord.path === 'options.splices') {
+                changeRecord.value.indexSplices.forEach(function(s) {
+                    s.removed.forEach(function(option) { delete this.spec.encoding[option.prop]; }, this);
+                    for (var i = 0; i < s.addedCount; i++) {
+                        var option = s.object[s.index + i];
+                        if (option.column) {
+                            var channel = option.prop,
+                                type = this._columnType(this.df.columnTypes[this.df.columns.indexOf(option.column)]);
+                            this.spec.encoding[channel] = this.spec.encoding[channel] || {};
+                            this.set('spec.encoding.' + channel + '.field', option.column);
+                            this.set('spec.encoding.' + channel + '.type', type);
+                        }
+                    }
+                }, this);
+
+                return;
+            }
+
+            // Assign fields in spec as indicated by user
+            var match = changeRecord.path.match(/^(options\.#\d)\.column$/);
+            if (match) {
+                var channel = this.get(match[1]).prop, column = this.get(match[0]),
+                    type = this._columnType(this.df.columnTypes[this.df.columns.indexOf(column)]);
+                if (column) {
+                    this.spec.encoding[channel] = this.spec.encoding[channel] || {};
+                    this.set('spec.encoding.' + channel + '.field', column);
+                    this.set('spec.encoding.' + channel + '.type', type);
+                } else {
+                    this.set('spec.encoding.' + channel, null);
+                }
+            }
+        },
+
+        _pickOptions: function(newType, ready) {
+            if (!ready) { return; }
+
+            var options = this.options;
+
+            // clear out any fields in the spec from previous type
+            this.set('spec.encoding', {});
+            this.set('options', []);
+
+            if (this._initialTypeSetup) {
+                // one time flag, when type and options information was restored with PersistBehavior
+                // refresh with those same options
+                delete this._initialTypeSetup;
+            } else {
+                // Reset to default options based on type chosen
+                options = (this._optionsMap || {})[newType];
+            }
+
+            // rebuild options and corresponding spec
+            //TODO: should use this.splice to add and remove in one step
+            options.forEach(function(option) { this.push('options', option); }, this);
+        },
+
+        _resize: function() {
+            var vega = this.$$('urth-viz-vega');
+            if (vega) vega._resize();
+        },
+
         _rowsChanged: function(event) {
             var values = event.detail.value;
 
@@ -689,20 +654,46 @@ or use optional arguments to specify properties and bindings:
             this._setSelectionInfo(event.detail.value);
         },
 
+        _showAsTable: function(type) {
+            return type == 'table';
+        },
+
         _showEditDialog: function() {
             this.$['spec-dialog'].open();
         },
 
-        _computeSpecString: function() {
-            return JSON.stringify(this.spec, null, 4);
+        _specChanged: function(changeRecord, ready) {
+            if (!ready) { return; }
+
+            var channelMatch = changeRecord.path.match(/^spec.encoding.([^.]+).field$/)
+            if (channelMatch) {
+                var type = this._columnType(this.df.columnTypes[this.df.columns.indexOf(changeRecord.value)]),
+                    channel = this.spec.encoding[channelMatch[1]];
+                channel.type = type;
+                if (type === 'temporal') {
+                    channel.timeUnit = this._computeUnit(channel.field, false);
+                    channel.axis = { shortTimeLabels: true};
+                } else {
+                    delete channel.timeUnit;
+                    if (this.spec.axis) delete this.spec.axis.shortTimeLabels;
+                }
+            }
         },
 
         _toggleCollapse: function() {
             this.$['viz-explorer-controls'].toggle();
         },
 
-        _controlsOpenedChanged: function(opened) {
-            this.$['controls-collapse-btn'].style.transform = 'rotateY(' + (opened ? 0 : 180) + 'deg)';
+        _typeChanged: function(newType) {
+            if (newType != 'table') {
+                this.set('spec.mark', newType);
+            }
+        },
+
+        attached: function() {
+            var originalType = this.type;
+            this.restoreState();
+            if (this.type !== originalType) { this._initialTypeSetup = true; }
         },
 
         ready: function() {
@@ -723,7 +714,7 @@ or use optional arguments to specify properties and bindings:
                     // Move template-generated dataframe from shadow DOM to content DOM
                     // and trigger state restore
                     Polymer.dom(this).appendChild(this.$$('urth-viz-query')).restoreState();
-          
+
                     // Call ready() directly to bind to new DOM document
                     var dataframe = this.querySelector('urth-core-dataframe');
                     dataframe.ready();
@@ -763,12 +754,6 @@ or use optional arguments to specify properties and bindings:
 
             // fit spec edit dialog into the explorer
             this.$['spec-dialog'].fitInto = this;
-        },
-
-        attached: function() {
-            var originalType = this.type;
-            this.restoreState();
-            if (this.type !== originalType) { this._initialTypeSetup = true; }
         }
     });
 

@@ -46,36 +46,33 @@ Collapsing will hide the content but keep the header
                     padding: 0 1em;
                 };
             }
+            :host .check-icon {
+                min-width: 1.7em;
+                min-height: 1.7em;
+            }
         </style>
 
-        <paper-menu-button
-            ignore-select
+        <paper-menu-button ignore-select vertical-offset="50"
             on-paper-dropdown-close="_clearFilter"
-            on-paper-dropdown-open="_focusFilter"
-            vertical-offset="50">
+            on-paper-dropdown-open="_focusFilter">
             <div class="dropdown-trigger">
                 <!-- Mimic paper-dropdown-menu trigger -->
-                <paper-input
-                    id="trigger"
-                    type="text"
-                    readonly
-                    value="[[selectedText]]"
-                    label="[[label]]"
-                    invalid="{{invalid}}">
+                <paper-input id="trigger" type="text" readonly label="[[label]]"
+                    value="[[selectedText]]" invalid="{{invalid}}">
                     <iron-icon icon="arrow-drop-down" suffix></iron-icon>
                 </paper-input>
             </div>
             <div class="dropdown-content">
                 <paper-input id="filter" label="Filter the [[itemType]]"
                     value="{{filter}}" tabindex="0"></paper-input>
-                <paper-menu
-                    id="items"
-                    multi
+                <paper-menu id="items" multi
                     on-iron-select="_updateSelectedValues"
                     on-iron-deselect="_updateSelectedValues">
                     <template is="dom-repeat" items="{{filteredItems}}" as="item">
                         <paper-item class="list-item" data-index$="{{item.index}}">
-                            <iron-icon icon="check"></iron-icon>[[item.value]]</paper-item>
+                            <iron-icon class="check-icon" icon="check"></iron-icon>
+                            <span>[[item.value]]</span>
+                        </paper-item>
                     </template>
                 </paper-menu>
             </div>
