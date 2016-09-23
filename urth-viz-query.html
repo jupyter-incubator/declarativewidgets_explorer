@@ -405,9 +405,7 @@ Let the user choose a query and display the results in an `urth-viz-table`
             var match = /^(queries\.#\d+)/.exec(change.path);
             if (match) {
                 var query = this.get(match[1]);
-                if (query.group) {
-                    this.lastModifiedQueryIndex = this.queries.indexOf(query);
-                }
+                this.lastModifiedQueryIndex = this.queries.indexOf(query);
             } else if (change.path === 'queries.splices' &&
                 change.value.indexSplices.length === 1 &&
                 change.value.indexSplices[0].removed.length === 1 &&
@@ -417,8 +415,8 @@ Let the user choose a query and display the results in an `urth-viz-table`
                 this.lastModifiedQueryIndex = -1; // -1 will update all
                 this.columns = change.value.indexSplices[0].removed[0].columns;
                 this.columnTypes = change.value.indexSplices[0].removed[0].columnTypes;
-                this._updateQueryColumns();
-                this._updateQueryColumnTypes();
+                this._updateQueryColumns('columns-changed');
+                this._updateQueryColumns('column-types-changed');
             }
         },
 
@@ -429,61 +427,57 @@ Let the user choose a query and display the results in an `urth-viz-table`
 
         _removeQuery: function(event) {
             this.splice('queries', event.model['query-index'], 1);
-            this.splice('columns', event.model['query-index'], 1);
         },
 
         _removeSort: function(event) {
             this.splice('sorts', event.model.index, 1);
         },
 
-        _updateQueryColumns: function() {
+        _updateQueryColumns: function(eventName) {
             var lastModified = Number(this.lastModifiedQueryIndex);
             var breakLoop = false;
             for (var i = lastModified+1; i < this.queries.length; i++) {
                 var query = this.queries[i];
-                var clearColumn;
+                if (eventName === 'column-types-changed') {
+                    // update query column types
+                    this.set(['queries',i,'columnTypes'], this.columnTypes);
 
-                // check query based on type
-                if (query.group) {
-                    // check group and agg cols, clear if not in current cols
-                    clearColumn = !(query.col || []).every(function(col) {
-                        return this.columns.indexOf(col) !== -1;
-                    }, this);
-                    query.aggregators.forEach(function(agg, j) {
-                        if (this.columns.indexOf(agg.col) === -1) {
-                            this.set(['queries',i,'aggregators',j,'col'], null);
-                        };
-                    }, this);
+                    // exit the loop if a groupby remained valid
+                    breakLoop = query.group && this._isQueryValid(query);
+                } else if (eventName === 'columns-changed') {
+                    var clearColumn;
 
-                    // if group is still valid stop this loop
-                    // a new update loop will start with this query
-                    breakLoop = this._isQueryValid(query);
-                } else if (query.filter) {
-                    // check filter col, clear if not in current cols
-                    clearColumn = this.columns.indexOf(query.col) === -1;
+                    // check query based on type
+                    if (query.group) {
+                        // check group and agg cols, clear if not in current cols
+                        clearColumn = !(query.col || []).every(function(col) {
+                            return this.columns.indexOf(col) !== -1;
+                        }, this);
+                        query.aggregators.forEach(function(agg, j) {
+                            if (this.columns.indexOf(agg.col) === -1) {
+                                this.set(['queries',i,'aggregators',j,'col'], null);
+                            };
+                        }, this);
+
+                        // if group is still valid stop this loop
+                        // a new update loop will start with this query
+                        breakLoop = this._isQueryValid(query);
+                    } else if (query.filter) {
+                        // check filter col, clear if not in current cols
+                        clearColumn = this.columns.indexOf(query.col) === -1;
+                    }
+
+                    // update query columns
+                    if (clearColumn) {
+                        this.set(['queries',i,'col'], null);
+                        this.set(['queries',i,'op'], null);
+                    }
+                    this.set(['queries',i,'columns'], this.columns);
+
                 }
-
-                // update query columns
-                if (clearColumn) {
-                    this.set(['queries',i,'col'], null);
-                    this.set(['queries',i,'op'], null);
-                }
-                this.set(['queries',i,'columns'], this.columns);
 
                 // exit the loop if a groupby remained valid
                 if (breakLoop) { break; }
-            }
-        },
-
-        _updateQueryColumnTypes: function() {
-            var lastModified = Number(this.lastModifiedQueryIndex);
-            for (var i = lastModified+1; i < this.queries.length; i++) {
-                // update query column types
-                this.set(['queries',i,'columnTypes'], this.columnTypes);
-
-                // exit the loop if a groupby remained valid
-                var query = this.queries[i];
-                if (query.group && this._isQueryValid(query)) { break; }
             }
         },
 
@@ -497,19 +491,37 @@ Let the user choose a query and display the results in an `urth-viz-table`
             dataframe.appendChild(this.$.queries);
             dataframe.appendChild(this.$.sort);
 
-            dataframe.addEventListener('columns-changed', function() {
-                this.columns = dataframe.columns;
-                if (!Number.isNaN(this.lastModifiedQueryIndex)) {
-                    this._updateQueryColumns();
-                }
-            }.bind(this));
+            // ignore the first one or two occurrances of an event since they
+            // are related to instantiation and will corrupt the queries if a
+            // query update occurs during an instantiation update
+            var init = {};
+            var getInitHandler = function(eventName) {
+                init[eventName] = {
+                    count: 0,
+                    done: false,
+                    fn: function() {
+                        init[eventName].count++;
+                        // 1 update for the event if no queries, else 2
+                        if (this.queries.length === 0 && init[eventName].count === 1 ||
+                            this.queries.length > 0 && init[eventName].count === 2) {
+                            init[eventName].done = true;
+                            dataframe.removeEventListener(eventName, init[eventName].fn);
+                        }
+                    }.bind(this)
+                };
+                return init[eventName].fn;
+            }.bind(this);
 
-            dataframe.addEventListener('column-types-changed', function() {
-                this.columnTypes = dataframe.columnTypes;
-                if (!Number.isNaN(this.lastModifiedQueryIndex)) {
-                    this._updateQueryColumnTypes();
-                }
-            }.bind(this));
+            ['columns-changed', 'column-types-changed'].forEach(function(eventName) {
+                dataframe.addEventListener(eventName, getInitHandler(eventName));
+                dataframe.addEventListener(eventName, function() {
+                    var camelCase = eventName.slice(0,eventName.length-8).replace(/-(.)/g, function(m) { return m[1].toUpperCase() });
+                    this[camelCase] = dataframe[camelCase];
+                    if (init[eventName].done && !Number.isNaN(this.lastModifiedQueryIndex)) {
+                        this._updateQueryColumns(eventName);
+                    }
+                }.bind(this));
+            });
         }
     });
 })();
