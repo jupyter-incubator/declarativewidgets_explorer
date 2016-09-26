@@ -46,11 +46,13 @@ It is also possible to construct an `urth-viz-explorer` instance directly in HTM
 
 1. From the notebook, open the explorer to install the necessary dependencies (see "Getting Started" above, or try the [urth-core-dataframe.ipynb example](https://github.com/jupyter-incubator/declarativewidgets/blob/master/etc/notebooks/examples/urth-core-dataframe.ipynb)
 
+1. Stop the server (control-C from console)
+
 1. Make a tarball of the declarativewidgets project (version 0.7 or later) which will now include bower dependencies for the explorer
 
     `make init; bower install path/to/explorer; make sdist`
 
-1. Copy the tarball from the `dist` directory into the top-level directory of the explorer project, then in the `declarativewidgets_explorer` project, do the following:
+1. Copy the tarball from the `dist` directory into the top-level directory of the explorer project, then in the `declarativewidgets_explorer` root directory, do the following to start the server:
 
     `make init; make run`
 
