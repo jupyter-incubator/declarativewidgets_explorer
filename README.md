@@ -1,5 +1,7 @@
 # Explorer visualization widget for the Jupyter notebook
 
+** This release supports only the Google Chrome browser **
+
 The [`<urth-viz-explorer>`](https://jupyter-incubator.github.io/declarativewidgets_explorer/#urth-viz-explorer) widget,
 based on the [jupyter-incubator/declarativewidgets project](https://github.com/jupyter-incubator/declarativewidgets),
 binds a dataframe to a visualization and provides controls to explore the data interactively.  Using an embedded
@@ -38,16 +40,22 @@ It is also possible to construct an `urth-viz-explorer` instance directly in HTM
 
 ## Developer Installation
 
-1. Clone the repository from github.
+1. Clone both the `declarativewidgets` and `declarativewidgets_explorer` repositories from github.
 
-1. Make a tarball of the declarativewidgets project (version 0.7 or later) with bower dependencies manually included for the explorer
+1. Set up the `declarativewidgets` project as a developer according to the README instructions and launch the server
+
+1. From the notebook, open the explorer to install the necessary dependencies (see "Getting Started" above, or try the [urth-core-dataframe.ipynb example](https://github.com/jupyter-incubator/declarativewidgets/blob/master/etc/notebooks/examples/urth-core-dataframe.ipynb)
+
+1. Make a tarball of the declarativewidgets project (version 0.7 or later) which will now include bower dependencies for the explorer
 
     `make init; bower install path/to/explorer; make sdist`
 
-1. Copy the tarball from the `dist` directory into the top-level directory of the explorer project, then:
+1. Copy the tarball from the `dist` directory into the top-level directory of the explorer project, then in the `declarativewidgets_explorer` project, do the following:
 
     `make init; make run`
 
 Jupyter will be running on port 8888.
+
+## Testing
 
 `make tests` assumes that declarativewidgets is installed as a sibling directory to this project
