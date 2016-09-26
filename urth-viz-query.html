@@ -521,7 +521,7 @@ Let the user choose a query and display the results in an `urth-viz-table`
                         this._updateQueryColumns(eventName);
                     }
                 }.bind(this));
-            });
+            }, this);
         }
     });
 })();
