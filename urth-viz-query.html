@@ -133,6 +133,11 @@ Let the user choose a query and display the results in an `urth-viz-table`
                     <multi-select-menu label="group by" selected="{{query.col}}"
                         items="{{query.columns}}" item-type="columns"
                         invalid="{{!_arrayContains(query.columns,query.col)}}"></multi-select-menu>
+                    <paper-icon-button
+                        class="clear-group-btn"
+                        on-tap="_clearGroup"
+                        icon="cancel">
+                    </paper-button>
                     <div class="agg-list">
                         <template is="dom-repeat" items="{{query.aggregators}}" as="agg">
                             <div class="query-agg">
@@ -349,6 +354,11 @@ Let the user choose a query and display the results in an `urth-viz-table`
 
         _arrayToString: function(arr) {
             return (arr || []).join(',');
+        },
+
+        _clearGroup: function(event) {
+            var i = event.currentTarget.parentNode.getAttribute("data-query-index");
+            this.set(['queries', i, 'col'], null);
         },
 
         _filterExpression: function(col, op, val) {
