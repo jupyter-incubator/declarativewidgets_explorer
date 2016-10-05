@@ -301,11 +301,15 @@ Let the user choose a query and display the results in an `urth-viz-table`
             },
             /**
              * Computed attributes for `urth-core-query-sort` based on `sorts` Array
+             * @private
              */
             sortAttrs: {
                 type: Object,
                 computed: '_flattenSort(sorts.*)'
             },
+            /**
+             * @private
+             */
             lastModifiedQueryIndex: {
                 type: Number,
                 value: NaN
