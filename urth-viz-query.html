@@ -96,6 +96,12 @@ Let the user choose a query and display the results in an `urth-viz-table`
         .sort-item .sort-direction-btn[active] {
             transform: rotateX(180deg);
         }
+        .clear-group-btn {
+            color: #9b9b9b;
+            padding: 0;
+            width: 1.3em;
+            height: 1.3em;
+        }
         :host {
             display: flex;
             flex-direction: column;
@@ -124,15 +130,20 @@ Let the user choose a query and display the results in an `urth-viz-table`
     </style>
     <template>
         <template is="dom-repeat" items={{queries}} as="query" index-as="query-index">
-            <div class="query-item" data-query-index$="{{query-index}}">
+            <div class="query-item">
                 <paper-icon-button class="query-remove-btn" noink icon="clear"
                     on-tap="_removeQuery"></paper-icon-button>
 
                 <!-- group -->
                 <template is="dom-if" if="{{query.group}}">
-                    <multi-select-menu label="group by" selected="{{query.col}}"
-                        items="{{query.columns}}" item-type="columns"
-                        invalid="{{!_arrayContains(query.columns,query.col)}}"></multi-select-menu>
+                    <div class="group-select">
+                        <multi-select-menu label="group by" selected="{{query.col}}"
+                            items="{{query.columns}}" item-type="columns"
+                            invalid="{{!_arrayContains(query.columns,query.col)}}"></multi-select-menu>
+                        <paper-icon-button class="clear-group-btn"
+                            on-tap="_clearGroup" icon="cancel"
+                            data-query-index$="{{query-index}}"></paper-icon-button>
+                    </div>
                     <div class="agg-list">
                         <template is="dom-repeat" items="{{query.aggregators}}" as="agg">
                             <div class="query-agg">
@@ -349,6 +360,11 @@ Let the user choose a query and display the results in an `urth-viz-table`
 
         _arrayToString: function(arr) {
             return (arr || []).join(',');
+        },
+
+        _clearGroup: function(event) {
+            var i = event.currentTarget.getAttribute("data-query-index");
+            this.set(['queries', i, 'col'], null);
         },
 
         _filterExpression: function(col, op, val) {

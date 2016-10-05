@@ -251,15 +251,14 @@ or use optional arguments to specify properties and bindings:
                                     </template>
                                 </paper-listbox>
                             </paper-dropdown-menu>
-                            <span data-index$="{{index}}">
-                                <template is="dom-if" if="[[option.optional]]">
-                                    <paper-icon-button
-                                        class="clear-option-btn"
-                                        on-tap="_clearOption"
-                                        icon="cancel">
-                                    </paper-button>
-                                </template>
-                            </span>
+                            <template is="dom-if" if="[[option.optional]]">
+                                <paper-icon-button
+                                    class="clear-option-btn"
+                                    on-tap="_clearOption"
+                                    icon="cancel"
+                                    data-index$="{{index}}">
+                                </paper-button>
+                            </template>
                         </div>
                     </template>
                 </paper-card-collapse>
@@ -437,7 +436,7 @@ or use optional arguments to specify properties and bindings:
         },
 
         _clearOption: function(event) {
-            var i = event.currentTarget.parentNode.getAttribute("data-index");
+            var i = event.currentTarget.getAttribute("data-index");
             this.set(['options', i, 'index'], null);
         },
 

@@ -144,13 +144,13 @@ Collapsing will hide the content but keep the header
             _updateSelection: function() {
                 // set selected items
                 if (!this._noUpdate) {
-                    var currentlySelectedIndices = this.$.items.selectedValues || [];
+                    var currentlySelectedIndices = [].concat(this.$.items.selectedValues || []);
                     var selectedIndices = (this.selected || []).map(function(item) {
                         return this.items.indexOf(item);
                     }, this);
 
                     // deselect currently selected indices that are not selected
-                    currentlySelectedIndices =
+                    var selectedIndicesThatStaySelected =
                         currentlySelectedIndices.filter(function(i) {
                             if (selectedIndices.indexOf(i) < 0) {
                                 this.$.items.selectIndex(i);
@@ -161,7 +161,7 @@ Collapsing will hide the content but keep the header
 
                     // select selected indices that aren't currently selected
                     selectedIndices.forEach(function(i) {
-                        if (currentlySelectedIndices.indexOf(i) < 0) {
+                        if (selectedIndicesThatStaySelected.indexOf(i) < 0) {
                             this.$.items.selectIndex(i);
                         }
                     }, this);
