@@ -169,14 +169,15 @@ Let the user choose a query and display the results in an `urth-viz-table`
                                             </template>
                                         </paper-listbox>
                                     </paper-dropdown-menu>
-                                    <paper-icon-button class="agg-remove-btn"
-                                        on-tap="_removeAgg" icon="clear" noink></paper-icon-button>
+                                    <paper-icon-button class="agg-remove-btn" noink
+                                        on-tap="_removeAgg" icon="clear" data-query-index$="{{query-index}}">
+                                    </paper-icon-button>
                                 </div>
                             </div>
                         </template>
                     </div>
 
-                    <paper-button class="add-agg" on-tap="_addAgg" noink>
+                    <paper-button class="add-agg" on-tap="_addAgg" noink data-query-index$="{{query-index}}">
                         <iron-icon icon="icons:add"></iron-icon>aggregation</paper-button>
                 </template>
 
@@ -281,14 +282,6 @@ Let the user choose a query and display the results in an `urth-viz-table`
         { op: '>=', desc: 'greater than or equal'}
     ]);
 
-    function getQueryIndex(node) {
-        while (node.parentElement &&
-               !node.dataset.hasOwnProperty('queryIndex')) {
-            node = node.parentElement;
-        }
-        return node.dataset.queryIndex;
-    }
-
     window.Urth = window.Urth || {};
     window.Urth['urth-viz-query'] = Polymer({
         is: 'urth-viz-query',
@@ -333,7 +326,7 @@ Let the user choose a query and display the results in an `urth-viz-table`
         ],
 
         _addAgg: function(event) {
-            var i = getQueryIndex(event.currentTarget);
+            var i = event.currentTarget.getAttribute("data-query-index");
             this.push('queries.'+i+'.aggregators', { op: null, col: null });
         },
 
@@ -437,7 +430,7 @@ Let the user choose a query and display the results in an `urth-viz-table`
         },
 
         _removeAgg: function(event) {
-            var i = getQueryIndex(event.currentTarget);
+            var i = event.currentTarget.getAttribute("data-query-index");
             this.splice('queries.'+i+'.aggregators', event.model.index, 1);
         },
 
