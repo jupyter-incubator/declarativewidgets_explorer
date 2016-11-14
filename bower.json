@@ -1,6 +1,6 @@
 {
   "name": "declarativewidgets-explorer",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Represents a widget that uses visualizations to explore an urth-core-dataframe",
   "main": "urth-viz-explorer.html",
   "authors": [
